@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tavern</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rpg-awesome/0.2.0/css/rpg-awesome.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./app.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght=400..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+</head>
+
+<body>
+    <div id="findFriends-popup">
+        <button id="findFriends-close">&times;</button>
+
+        <h2>Find your friends</h2>
+
+        <div class="findFriends-search-row">
+            <label for="findFriends-searchByDropdown">Search by:</label>
+            <select id="findFriends-searchByDropdown">
+                <option value="name">User Name</option>
+                <option value="Real Name" selected>Real Name</option>
+            </select>
+
+            <input type="text" id="findFriends-input" placeholder="Type a name..." />
+            <button id="findFriends-searchBtn">Search</button>
+        </div>
+        <div id="findFriends-foundFriends"></div>
+        <div id="findFriends-selectedFriends"></div>
+        <br>
+        <div class="findFriends-search-row">
+            <label for="findFriends-convName">Name Chat (This can be changed later):</label>
+            <input type="text" id="findFriends-convName" placeholder="Type a name..." />
+        </div>
+        <button id="findFriends-createConv">Create Conversation</button>
+
+    </div>
+
+    <template id="findFriends-foundFriends_template">
+        <div class="findFriends-template-row">
+            <span><strong>Name: </strong><span class="findFriends-template_real_name"></span></span>
+            <span class="divider">|</span>
+            <span><strong>Username: </strong><span class="findFriends-template_name"></span></span>
+            <span class="divider">|</span>
+            <button class="findFriends-searched-save">Add to Conversation</button>
+        </div>
+    </template>
+
+
+    <nav id="sidebar">
+        <ul>
+            <li>
+                <button id="toggle-btn">
+                    <i class="ra ra-broadhead-arrow"></i>
+                </button>
+            </li>
+        </ul>
+        <ul>
+            <template id="sidebarTemplate">
+                <li>
+                    <a class="nav-btn">
+                        <i class="ra ra-2x"></i>
+                        <span class="sidebarText"></span>
+                    </a>
+                </li>
+            </template>
+
+            <li>
+                <button class="dropdown-btn">
+                    <i class="ra ra-2x ra-beer"></i>
+                    <span>All Patrons</span>
+                    <i class="ra ra-broadhead-arrow"></i>
+                </button>
+                <div class="sub-menu show">
+                    <ul id="everySidebarParent">
+                    </ul>
+                </div>
+            </li>
+
+            <li>
+                <button class="dropdown-btn">
+                    <i class="ra ra-2x ra-player"></i>
+                    <span>My Pack</span>
+                    <i class="ra ra-broadhead-arrow"></i>
+                </button>
+                <div class="sub-menu">
+                    <ul id="personal-menu">
+                    </ul>
+                </div>
+            </li>
+
+            <li>
+                <button class="dropdown-btn">
+                    <i class="ra ra-2x ra-double-team"></i>
+                    <span>Private Chats</span>
+                    <i class="ra ra-broadhead-arrow"></i>
+                </button>
+                <div class="sub-menu">
+                    <ul id="private-chat-list">
+                        <li id="find-friends-li">
+                            <a class="nav-btn" id="findFriends-btn" data-id="find-friends">
+                                <i class="ra ra-2x ra-aware"></i>
+                                <span class="sidebarText">Find Friends</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    <main>
+        <header>
+            <h1 class="cinzel-title">The Tavern</h1>
+        </header>
+        <div id="mainContentArea" class="mainArea">
+
+        </div>
+        <div id="chatTools" hidden class="featureHTML">
+            <div id="sendBar"></div><button id="sendBtn"><i class="ra ra-2x ra-spear-head"></i></button>
+        </div>
+        <div id="userPermsUI" hidden class="featureHTML">
+            <p id="helpTextUserPerms"><strong>Select a filter or enter a search and press the find button to
+                    begin</strong></p>
+            <div id="userSearchFilters">
+                <label for="filterDropdown">Choose a filter</label>
+                <select name="filterDropdown" id="filterDropdown">
+                    <option value="searchName">Search by name</option>
+                    <option value="notAllowed">Not allowed users (recent signups)</option>
+                </select>
+
+            </div>
+            <button id="userSearchBttn">Find Users</button>
+            <input type="text" id="searchTermIn" />
+            <template id="userSearchTemplate">
+                <div style="display: flex;">
+                    <pre><strong>Name: </strong></pre>
+                    <p class="searched-Name"></p>
+                    <pre> | </pre>
+                    <pre><strong> Allowed:  </strong></pre>
+                    <select class="searched-allowed">
+                        <option value="false">False</option>
+                        <option value="true">True</option>
+                    </select>
+                    <pre> | </pre>
+                    <pre><strong> Paid Dues:  </strong></pre>
+                    <select class="searched-dues-paid">
+                        <option value="false">False</option>
+                        <option value="true">True</option>
+                    </select>
+                    <pre><strong>Roles:  </strong></pre>
+                    <p class="searched-roles"></p>
+                    <p> | </p>
+                    <button class="searched-addRole-btn">Add Role</button><button class="searched-revokeRole-btn">Revoke
+                        Role</button> <select class="searched-addRole-val">
+                        <option value="dm">DM</option>
+                        <option value="officer">Officer</option>
+                    </select>
+                    <p> | </p> <button class="searched-save">Save Changes</button>
+                </div>
+            </template>
+        </div>
+        <template id="board-template">
+            <div class="board-parent">
+                <section class='boardMessage'>
+                    <h3 class="cinzel-title board-title"></h3>
+                    <p class="board-body"></p>
+                    <button class="board-delete" hidden>Delete</button>
+                </section>
+            </div>
+        </template>
+        <div style="display: flex; justify-content: center;">
+            <button id="board-new" hidden>Create a new board.</button>
+        </div>
+        <div id="campaignUI" hidden class="mainArea">
+            <div id="campaign-left" hidden>
+                <p>Main text</p>
+                <button id="campaign-enterSplitscreen">Toggle split screen</button>
+            </div>
+            <div id="campaign-splitScreenDivide" hidden></div>
+            <div id="campaign-right" hidden>
+                <p>Right side text</p>
+            </div>
+        </div>
+
+        <template id="guestUITemplate">
+            <div>
+                <h2 id="rollCall_waitText" hidden>Loading...</h2>
+                <strong><pre id="rollCall_memberNum"></pre><pre> Members</pre></strong>
+                <strong><pre id="rollCall_GuestNum"></pre><pre> Guests</pre></strong>
+                <h3>Checked in members</h3>
+                <br>
+                <div id="checkedInMembers"></div>
+                <br><br>
+                <h3>Checked in Guests</h3>
+                <br>
+                <div id="checkedInGuests"></div>
+            </div>
+        </template>
+
+        <template id="officersDeskUI">
+            <div>
+                <pre>This is reporting system for in club issues.</pre>
+                <pre>Your name will not be shown to officers who are handling your ticket.</pre>
+                <pre>Technical Admins may be able to identify your account if necessary for security or system administration.</pre>
+                <pre>Thank you for keeping our club safe!</pre><br>
+                <div style="display:flex"><button id="OD_showMyTickets" data-toggle="false"><strong><pre id="OD_showMyTicketsText">See my tickets ⌄</pre></strong></button></div>
+                <div id="OD_myTickets" hidden></div>
+                <div id="OD_newTicket" style="display: flex;">
+                    <label for="OD_ticketType">Ticket Type</label>
+                    <select name="OD_ticketType" id="OD_ticketType">
+                        <option value="null">Select</option>
+                        <option value="club">Club Issue</option>
+                        <option value="DM">DM Issue</option>
+                        <option value="player">Player Issue</option>
+                        <option value="safety">Safety Concern</option>
+                        <option value="bug">Website Bug</option>
+                        <option value="suggestion">Website Suggestion</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <label for="OD_textInput">Ticket information</label>
+                    <input type="text" id="OD_textInput" name="OD_textInput"></input>
+                    <button id="OD_submit">Submit</button>
+                </div>
+
+            </div>
+        </template>
+
+        <template id="OD_myTicket_template">
+            <div style="border: 2px solid var(--accent-clr);">
+                <div style="display: flex;">
+                    <pre>Ticket Description: </pre>
+                    <pre class="OD_myTicket_desc"></pre>
+                </div>
+                <div style="display: flex;">
+                    <pre>Ticket Progress: </pre>
+                    <pre class="OD_myTicket_progress"></pre>
+                </div>
+                <div style="display: flex;">
+                    <pre>Last Update: </pre>
+                    <pre class="OD_myTicket_lastUpdate"></pre>
+                </div>
+            </div>
+        </template>
+
+    </main>
+</body>
+</html>

@@ -1,0 +1,421 @@
+:root {
+    --base-clr: #5C4033;
+    --line-clr: gold;
+    --hover-clr: black;
+    --text-clr: white;
+    --accent-clr: gold;
+    --secondary-text-clr: brown;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+
+html {
+    line-height: 1.5rem;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--line-clr);
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: var(--base-clr);
+    color: var(--text-clr);
+    display: grid;
+    grid-template-columns: auto 1fr;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden
+}
+
+#sidebar {
+    box-sizing: border-box;
+    height: 100vh;
+    width: 250px;
+    padding: 5px 1em;
+    background-color: var(--base-clr);
+    border-right: 1px solid var(--line-clr);
+
+    position: sticky;
+    top: 0;
+    align-self: start;
+    transition: 300ms ease-in-out;
+    overflow: hidden;
+    text-wrap: nowrap;
+}
+
+#sidebar.close {
+    padding: 5px;
+    width: 60px;
+
+}
+
+#sidebar ul {
+    list-style: none;
+}
+
+
+#sidebar ul li.active a {
+    color: var(--accent-clr);
+}
+
+#sidebar ul li.active a i {
+    color: var(--accent-clr);
+}
+
+#sidebar a,
+#sidebar .dropdown-btn {
+    border-radius: .5em;
+    padding: .85em;
+    text-decoration: none;
+    color: var(--text-clr);
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.dropdown-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+#sidebar i {
+    flex-shrink: 0;
+    fill: var(--text-clr);
+}
+
+#sidebar a span,
+#sidebar .dropdown-btn span {
+    flex-grow: 1;
+}
+
+#sidebar a:hover,
+#sidebar .dropdown-btn:hover {
+    background-color: var(--hover-clr);
+}
+
+/* --- DROPDOWN  --- */
+#sidebar .sub-menu {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 300ms ease-in-out;
+    padding-left: 2em;
+}
+
+
+#sidebar .sub-menu>ul {
+    overflow: hidden;
+    min-height: 0;
+}
+
+#sidebar .sub-menu.show {
+    grid-template-rows: 1fr;
+}
+
+#sidebar .sub-menu a {
+    padding-left: 2.5em;
+}
+
+dropdown-btn i {
+    transition: 200ms ease;
+}
+
+.rotate i:last-child {
+    rotate: -180deg;
+}
+
+
+#toggle-btn {
+    margin-left: auto;
+    padding: 1em;
+    border: none;
+    border-radius: .5em;
+    background: none;
+    cursor: pointer;
+    color: var(--text-clr);
+
+    i {
+        transition: rotate 150ms ease;
+    }
+}
+
+#toggle-btn:hover {
+    background-color: var(--hover-clr);
+}
+
+.message {
+    padding: 0.25em;
+    border: 1.5px solid var(--line-clr);
+    background-color: var(--base-clr);
+    border-radius: 5px;
+    width: fit-content;
+    width: 75%;
+
+
+    p {
+        color: var(--text-clr);
+        margin: 4px 0;
+        padding: 0.25em;
+    }
+
+}
+
+.message.mine {
+    align-self: flex-end;
+    border-radius: 8px 8px 1px 8px;
+    text-align: right;
+}
+
+.message.notMine {
+    align-self: flex-start;
+    border-radius: 8px 8px 8px 1px;
+    text-align: left;
+}
+
+.boardMessage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em;
+    margin: 1em;
+    border: 1px solid var(--line-clr);
+    border-radius: 5px;
+}
+
+
+
+#chatTools:not([hidden]) {
+    display: flex;
+    gap: 0.5em;
+    padding: 1em;
+    border-top: 1px solid var(--line-clr);
+    align-items: center;
+}
+
+#sendBar {
+    flex-grow: 1;
+    height: 2.5rem;
+    resize: none;
+    padding: 0.5em;
+    border-radius: 4px;
+    border: 1px solid var(--line-clr);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-clr);
+}
+
+#sendBtn {
+    background: none;
+    border: none;
+    color: var(--accent-clr);
+    outline: 1px solid var(--line-clr);
+    cursor: pointer;
+
+    i {
+        transform: rotateY(180deg);
+    }
+}
+
+
+.cinzel-title {
+    font-family: "Cinzel", serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 5rem;
+    -webkit-text-stroke: 1.5px #D8B26F;
+    color: #422607;
+    padding: 0.5em;
+}
+
+#div .tiptap {
+    width: 100%;
+    height: 100%;
+}
+
+.ProseMirror {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.ProseMirror-focused {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Ensure contenteditable boxes remain clickable when entirely empty */
+[contenteditable="true"] {
+    min-height: 1.5em;
+    /* Gives you a line of space to click into */
+    min-width: 100px;
+    /* Ensures it doesn't shrink horizontally */
+    display: inline-block;
+    /* Helps maintain structural dimensions */
+}
+
+/* Optional: Show a subtle hint text when the officer deletes everything */
+[contenteditable="true"]:empty::before {
+    content: "Type announcement...";
+    color: #888;
+    font-style: italic;
+}
+
+#campaignUI {
+    position: relative;
+    /* CRITICAL: Caps the absolute children to this box */
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    /* Ensure it fills its limited container */
+    margin: 0;
+    padding: 0;
+}
+
+#campaign-left {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 50%;
+    /* Default layout to roughly half width */
+}
+
+#campaign-splitScreenDivide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: black;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    /* Remove the hardcoded left: 200px; */
+}
+
+#campaign-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+
+
+#findFriends-popup {
+    background-color: var(--base-clr);
+    outline: 2px solid var(--line-clr);
+    border-radius: 5px;
+    width: 75%;
+    max-width: 650px;
+    height: 50%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 15px;
+    box-sizing: border-box;
+}
+
+#findFriends-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+
+#findFriends-popup h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.findFriends-search-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+#findFriends-selectedFriends {
+    width: 100%;
+}
+
+#findFriends-foundFriends {
+    width: 100%;
+    height: 100px;
+    overflow-y: auto;
+}
+
+.findFriends-template-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+
+#userPermsUI {
+    padding-bottom: 30px;
+    padding-left: 15px;
+}
+
+#checkedInGuests {
+    display: flex;
+    flex-direction: row;
+}
+
+.checkedInGuest {
+    outline: 2px solid black;
+}
+
+.mainArea:not([hidden]) {
+    flex: 1;
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+#OD_newTicket {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+#OD_myTickets{
+    border: 2px solid var(--accent-clr);
+    height: 200px;
+    overflow: scroll
+}
