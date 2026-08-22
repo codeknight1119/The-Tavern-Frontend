@@ -1,10 +1,38 @@
 {
   "hosting": {
-    "public": "public",
+    "public": ".",
     "ignore": [
       "firebase.json",
+      "README.md",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "/public/index.html",
+        "type": 302
+      },
+      {
+        "source": "/index.html",
+        "destination": "/public/index.html",
+        "type": 302
+      },
+      {
+        "source": "/chat",
+        "destination": "/public/chat.html",
+        "type": 302
+      },
+      {
+        "source": "/chat.html",
+        "destination": "/public/chat.html",
+        "type": 302
+      },
+      {
+        "source": "/signIn",
+        "destination": "/public/index.html",
+        "type": 302
+      }
     ]
   }
 }
