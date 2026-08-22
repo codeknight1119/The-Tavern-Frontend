@@ -1,5 +1,5 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-uUwx4SvE",
+    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-K-uUwx4SvE",
     authDomain: "wchs-thetavern.firebaseapp.com",
     projectId: "wchs-thetavern",
     storageBucket: "wchs-thetavern.firebasestorage.app",
