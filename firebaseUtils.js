@@ -1,5 +1,5 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-K-uUwx4SvE",
+    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-uUwx4SvE",
     authDomain: "wchs-thetavern.firebaseapp.com",
     projectId: "wchs-thetavern",
     storageBucket: "wchs-thetavern.firebasestorage.app",
@@ -8,6 +8,6 @@ const firebaseConfig = {
     measurementId: "G-L2LD6HTME2"
 };
 
-import {Firebase} from "/utils/firebaseUtils.js"
+import {Firebase} from "/utils/firebaseUtilsClass.js"
 
 export const FirebaseUtils = new Firebase(firebaseConfig)
