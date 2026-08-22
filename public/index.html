@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Tavern - Login</title>
-    <link rel="stylesheet" href="./main/style.css" />
+    <link rel="stylesheet" href="./style.css" />
     <style>
         *,
         *::before,
@@ -124,8 +124,7 @@
 
 
         function goToMainSite() {
-            window.location.href =
-                "https://codeknight1119.github.io/chat";
+            window.location.href = "/chat.html";
         }
 
 
@@ -135,34 +134,18 @@
                 return;
             }
 
-            // Both loginGoogle() and isSignedIn() should return:
-            // {
-            //     user: FirebaseUser,
-            //     isNew: boolean
-            // }
             authUser = data.user;
 
             console.log("Authentication data:", data);
             console.log("Firebase user:", authUser);
             console.log("Is new Firebase user:", data.isNew);
 
-            // Look for the user's Tavern profile in Firestore
             tavernUser = await FirebaseUtils.getDocument(
                 `/users/${authUser.uid}`
             );
 
             console.log("Tavern user data:", tavernUser);
 
-
-            /*
-             * NEW USER
-             *
-             * There are two ways someone can end up here:
-             *
-             * 1. They just created a new Google/Firebase account.
-             * 2. They have a Firebase account, but don't have a
-             *    Tavern profile yet.
-             */
             if (data.isNew || tavernUser === undefined) {
                 console.log("New Tavern user. Showing signup form.");
 
@@ -173,13 +156,6 @@
                 return;
             }
 
-
-            /*
-             * EXISTING USER
-             *
-             * The user already has a Tavern profile, so now
-             * check their Firebase custom claims.
-             */
             console.log("Existing Tavern user. Checking permissions...");
 
             try {
@@ -207,9 +183,6 @@
         }
 
 
-        /*
-         * Check if the user is already signed in when the page loads.
-         */
         async function checkLogin() {
             try {
                 const data = await FirebaseUtils.isSignedIn();
@@ -224,12 +197,6 @@
         }
 
 
-        /*
-         * LOGIN / SIGN UP
-         *
-         * This handles both existing Google users and completely
-         * new Google users.
-         */
         document.getElementById("login").addEventListener("click", async () => {
             try {
                 const signIn = await FirebaseUtils.loginGoogle();
@@ -247,9 +214,6 @@
         });
 
 
-        /*
-         * CREATE TAVERN PROFILE
-         */
         document.getElementById("signUp").addEventListener("click", async () => {
 
             if (!authUser) {
@@ -257,7 +221,6 @@
                 alert("You are not signed in. Please sign in again.");
                 return;
             }
-
 
             const firstName =
                 document
@@ -283,10 +246,6 @@
                     .value
                     .trim();
 
-
-            /*
-             * Make sure everything was filled out.
-             */
             if (
                 !firstName ||
                 !lastName ||
@@ -297,10 +256,6 @@
                 return;
             }
 
-
-            /*
-             * Create the Tavern profile.
-             */
             try {
                 console.log("Creating Tavern profile...");
 
@@ -310,23 +265,14 @@
                         realName: `${firstName} ${lastName}`,
                         realFirstName: firstName,
                         realLastName: lastName,
-
                         displayName: displayName,
-
                         studentID: studentID,
-
-                        // New users start as players.
-                        // They still need officer verification.
                         permissions: ["player"]
                     }
                 );
 
                 console.log("Tavern profile successfully created.");
 
-                /*
-                 * Update our local copy so the rest of the page
-                 * knows the profile now exists.
-                 */
                 tavernUser = {
                     realName: `${firstName} ${lastName}`,
                     realFirstName: firstName,
@@ -335,11 +281,6 @@
                     studentID: studentID,
                 };
 
-
-                /*
-                 * Hide registration and tell them they need
-                 * an Officer to verify them.
-                 */
                 signUpEl.hidden = true;
                 loginSignUpEl.hidden = true;
                 getVerifiedEl.hidden = false;
@@ -356,10 +297,6 @@
             }
         });
 
-
-        /*
-         * Start authentication check when the page loads.
-         */
         checkLogin();
 
     </script>
