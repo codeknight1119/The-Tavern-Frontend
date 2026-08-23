@@ -4,15 +4,10 @@ import {
     getDocs, collection, limit, query, addDoc, orderBy, where,
     deleteDoc, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
-<<<<<<< HEAD
-import { 
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, getAdditionalUserInfo, createUserWithEmailAndPassword 
-=======
 import {
     getAuth, GoogleAuthProvider, signInWithPopup, signOut,
     getAdditionalUserInfo, createUserWithEmailAndPassword,
     signInWithEmailAndPassword
->>>>>>> 435de5d133ba45500693118649ca375f17cc7e6f
 } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
 import { initializeAnalytics, logEvent } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js';
 
