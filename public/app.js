@@ -63,6 +63,7 @@ async function checkUserManifest() {
             userManifest = []
         }
     }
+    console.log("userManifest", userManifest)
 
     const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
     const guest_manifestTimestampData = await FirebaseUtils.getDocument("/users/guestManifestTimestamp/");
@@ -76,6 +77,7 @@ async function checkUserManifest() {
             guestManifest = []
         }
     }
+    console.log("guestManifest", guestManifest)
 }
 
 const toggleButton = document.getElementById("toggle-btn")
