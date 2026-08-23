@@ -18,6 +18,7 @@
         .authDivider { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
         .authDivider::before, .authDivider::after { content: ""; height: 1px; background: var(--line-clr, #ccc); flex: 1; }
         .authNote { font-size: 0.9em; opacity: 0.85; }
+        .authWarning { font-size: 0.9em; margin-top: -2px; }
         .authError { color: #a33; min-height: 1.2em; }
         header { display: flex; justify-content: center; position: relative; top: 25px; }
     </style>
@@ -27,7 +28,7 @@
         <h3>The Tavern</h3>
         <p>Choose how you want to sign in.</p>
         <button id="googleLogin">Sign in with Google</button>
-        <p class="authNote">Use a <strong>personal Google account</strong>, not your school account.</p>
+        <p class="authWarning"><strong>Google account:</strong> Please use a personal Google account, not your school account.</p>
         <div class="authDivider"><span>or</span></div>
         <p><strong>Don't have a personal email?</strong><br>You can make a Tavern username and password instead.</p>
         <button id="showGenericLogin">Sign in with Username</button>
@@ -126,6 +127,17 @@
             catch (error) { console.error("Failed to check login:", error); }
         }
 
+        async function updateManifestTimestamp() {
+            try {
+                await FirebaseUtils.setDocument("/users/userManifestTimestamp", { timestamp: Date.now() });
+            } catch (error) {
+                // This document is intentionally protected by Firestore rules.
+                // A new user's account/profile should still be created successfully if
+                // the shared manifest timestamp cannot be updated by that user.
+                console.warn("Could not update user manifest timestamp:", error);
+            }
+        }
+
         document.getElementById("login").addEventListener("click", () => { clearErrors(); authPopup.hidden = false; });
 
         document.getElementById("googleLogin").addEventListener("click", async () => {
@@ -174,7 +186,7 @@
                     realName: `${firstName} ${lastName}`, realFirstName: firstName, realLastName: lastName,
                     displayName: username, studentID, permissions: ["player"]
                 });
-                await FirebaseUtils.setDocument("/users/userManifestTimestamp", { timestamp: Date.now() });
+                await updateManifestTimestamp();
                 tavernUser = await FirebaseUtils.getDocument(`/users/${authUser.uid}`);
                 hideAuthPopups(); loginSignUpEl.hidden = true; getVerifiedEl.hidden = false;
             } catch (error) {
@@ -197,7 +209,7 @@
                     realName: `${firstName} ${lastName}`, realFirstName: firstName, realLastName: lastName,
                     displayName, studentID, permissions: ["player"]
                 });
-                await FirebaseUtils.setDocument("/users/userManifestTimestamp", { timestamp: Date.now() });
+                await updateManifestTimestamp();
                 tavernUser = await FirebaseUtils.getDocument(`/users/${authUser.uid}`);
                 hideAuthPopups(); loginSignUpEl.hidden = true; getVerifiedEl.hidden = false;
             } catch (error) {
