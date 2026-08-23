@@ -63,7 +63,7 @@ async function checkUserManifest() {
             userManifest = []
         }
     }
-    
+
     const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
     const guest_manifestTimestampData = await FirebaseUtils.getDocument("/users/guestManifestTimestamp/");
     const guest_manifestTimestamp = Number(guest_manifestTimestampData?.timestamp) || 0;
@@ -695,7 +695,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
             // allowed is no longer stored in Firestore,
             // so this search is handled through the backend.
-            docs = await fetchServer("getNotAllowedUsers");
+            docs = await fetchServer("getNotAllowedUsers", {});
 
             if (!Array.isArray(docs)) {
                 alert(docs?.error || "Failed to find users.");
