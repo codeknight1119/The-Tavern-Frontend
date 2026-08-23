@@ -274,6 +274,10 @@
                     }
                 );
 
+                await FirebaseUtils.updateDocument("/users/userManifestTimestamp/", {
+                    timestamp: Date.now()
+                });
+
                 console.log("Tavern profile successfully created.");
 
                 tavernUser = {
