@@ -238,7 +238,8 @@ async function search() {
     const searchTerm = findFriends_textIn.value.trim().toLowerCase();
     if (searchTerm === "") return;
 
-    const key = findFriends_keyDropdown.value;
+    const key = findFriends_keyDropdown.value || "name";
+    console.log("key:", key);
 
     await checkUserManifest()
     const filteredResults = userManifest.filter(item => {
