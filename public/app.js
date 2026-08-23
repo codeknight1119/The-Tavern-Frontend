@@ -24,6 +24,8 @@ let activeFeatureType = null;
 let userManifest = null;
 let guestManifest = null;
 
+
+
 const chatArea = document.getElementById("sendBar")
 
 const messageInput = new Editor({
@@ -49,16 +51,25 @@ const messageInput = new Editor({
 //////////////////////////////////////////////////////////////////////
 
 async function checkUserManifest() {
-    if (userManifest === null) {
+    const localUserManifestTimestamp = Number(localStorage.getItem("userManifestTimestamp")) || 0;
+    const member_manifestTimestampData = await FirebaseUtils.getDocument("/users/userManifestTimestamp/");
+    const member_manifestTimestamp = Number(member_manifestTimestampData?.timestamp) || 0;
+    if (userManifest === null || member_manifestTimestamp > localUserManifestTimestamp) {
         const rawData = await FirebaseUtils.getDocument("/users/userManifest");
+        localStorage.setItem("userManifestTimestamp", String(member_manifestTimestamp));
         if (rawData) {
             userManifest = rawData.manifest;
         } else {
             userManifest = []
         }
     }
-    if (guestManifest === null) {
+    
+    const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
+    const guest_manifestTimestampData = await FirebaseUtils.getDocument("/users/guestManifestTimestamp/");
+    const guest_manifestTimestamp = Number(guest_manifestTimestampData?.timestamp) || 0;
+    if (guestManifest === null || guest_manifestTimestamp > localGuestManifestTimestamp || !localStorage.getItem("guestManifest")) {
         const rawData = await FirebaseUtils.getDocument("/users/guestManifest");
+        localStorage.setItem("guestManifestTimestamp", String(guest_manifestTimestamp));
         if (rawData) {
             guestManifest = rawData.manifest;
         } else {
