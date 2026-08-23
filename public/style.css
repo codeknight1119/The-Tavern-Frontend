@@ -419,3 +419,18 @@ dropdown-btn i {
     height: 200px;
     overflow: scroll
 }
+
+#loading-popup{
+    background-color: var(--base-clr);
+    outline: 2px solid var(--line-clr);
+    border-radius: 5px;
+    width: 75%;
+    max-width: 650px;
+    height: 50%;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: none;
+}

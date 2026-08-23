@@ -832,31 +832,46 @@ function stopResizing() {
 
 
 async function fetchServer(endpoint, postData) {
+    const popup = document.getElementById("loading-popup");
     const token = await firebaseUser.getIdToken();
     const link = `https://the-tavern-backend.onrender.com/${endpoint}`;
 
-    let body = {
-        headers: {
-            // This header bypasses the ngrok warning page
-            "ngrok-skip-browser-warning": "true",
-            Authorization: `Bearer ${token}`
-        }
-    }
+    const headers = { Authorization: `Bearer ${token}` };
     if (postData) {
-        body.method = "POST",
-            body.body = JSON.stringify(postData)
+        headers["Content-Type"] = "application/json";
     }
 
-    const data = await fetch(link, body);
+    const options = {
+        method: postData ? "POST" : "GET",
+        headers: headers,
+        ...(postData && { body: JSON.stringify(postData) })
+    };
 
-    // Always check if the HTTP response status is OK (200-299)
-    if (!data.ok) {
-        throw new Error(`HTTP error! Status: ${data.status}`);
+    // Step 1: Fast check to see if the server is awake
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+    try {
+        const response = await fetch(link, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        return await response.json();
+    } catch (err) {
+        if (err.name === "AbortError") {
+            if (popup) popup.hidden = false;
+
+            try {
+                const response = await fetch(link, options);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return await response.json();
+            } finally {
+                // Ensure popup hides once finished (success or fail)
+                if (popup) popup.hidden = true;
+            }
+        }
+        throw err;
     }
-
-    const jsData = await data.json();
-    console.log(jsData);
-    return jsData
 }
 
 
