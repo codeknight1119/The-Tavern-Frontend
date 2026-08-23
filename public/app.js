@@ -99,7 +99,7 @@ dropdowns.forEach((val) => {
 //////////////////////////////////////////////////////////////////////
 async function checkUser() {
     const userCheck = await FirebaseUtils.isSignedIn()
-   
+
 
     if (!userCheck) {
         window.location.href = "/signIn"
@@ -476,57 +476,57 @@ async function renderTool(id) {
 
         case ("officerMessage"):
             const OD_ui = document.getElementById("officersDeskUI").content.cloneNode(true)
-            OD_ui.querySelector("#OD_submit").addEventListener("click", async ()=>{
+            OD_ui.querySelector("#OD_submit").addEventListener("click", async () => {
                 const ticketType = document.getElementById("OD_ticketType").value
-                if(ticketType === "null"){
+                if (ticketType === "null") {
                     return
                 }
-            const data = await FirebaseUtils.addDocument(`features/${id}/tickets`, {
-                "creator": user.uid,
-                "type":  ticketType,
-                "description": document.getElementById("OD_textInput").value,
-                "progress": "submitted",
-                "created": String(Date.now()),
-                "lastUpdate": String(Date.now())
-            })
-            document.getElementById("OD_ticketType").value = "null"
-            document.getElementById("OD_textInput").value = ""
+                const data = await FirebaseUtils.addDocument(`features/${id}/tickets`, {
+                    "creator": user.uid,
+                    "type": ticketType,
+                    "description": document.getElementById("OD_textInput").value,
+                    "progress": "submitted",
+                    "created": String(Date.now()),
+                    "lastUpdate": String(Date.now())
+                })
+                document.getElementById("OD_ticketType").value = "null"
+                document.getElementById("OD_textInput").value = ""
 
             })
             mainContentArea.appendChild(OD_ui)
             const showMyTicketBtn = document.getElementById("OD_showMyTickets")
-            
+
             showMyTicketBtn.addEventListener("click", async () => {
                 const isShowing = showMyTicketBtn.dataset.toggle === "true";
                 const toggle = !isShowing;
 
                 showMyTicketBtn.dataset.toggle = String(toggle);
-                
-                document.getElementById("OD_showMyTicketsText").innerText = toggle 
-                    ? "Hide my tickets ^" 
+
+                document.getElementById("OD_showMyTicketsText").innerText = toggle
+                    ? "Hide my tickets ^"
                     : "See my tickets ⌄";
                 const myTicketsArea = document.getElementById("OD_myTickets")
                 if (toggle && Array.from(myTicketsArea.children).length === 0) {
                     const myTickets = await FirebaseUtils.getDocuments(
-                        `/features/${id}/tickets`, 
-                        15, 
-                        {}, 
+                        `/features/${id}/tickets`,
+                        15,
+                        {},
                         { field: "creator", value: user.uid }
                     );
-                myTickets.forEach((val)=>{
-                    const OD_myTicket_Template = document.getElementById("OD_myTicket_template").content.cloneNode(true)
-                    
-                    OD_myTicket_Template.querySelector(".OD_myTicket_desc").innerText = val.description
-                    OD_myTicket_Template.querySelector(".OD_myTicket_progress").innerText = val.progress
-                    const time = new Date(Number(val.lastUpdate)).toLocaleString()
-                    OD_myTicket_Template.querySelector(".OD_myTicket_lastUpdate").innerText = time
-                    myTicketsArea.appendChild(OD_myTicket_Template)
-                })
+                    myTickets.forEach((val) => {
+                        const OD_myTicket_Template = document.getElementById("OD_myTicket_template").content.cloneNode(true)
+
+                        OD_myTicket_Template.querySelector(".OD_myTicket_desc").innerText = val.description
+                        OD_myTicket_Template.querySelector(".OD_myTicket_progress").innerText = val.progress
+                        const time = new Date(Number(val.lastUpdate)).toLocaleString()
+                        OD_myTicket_Template.querySelector(".OD_myTicket_lastUpdate").innerText = time
+                        myTicketsArea.appendChild(OD_myTicket_Template)
+                    })
                 }
 
-                    myTicketsArea.hidden = !toggle;
+                myTicketsArea.hidden = !toggle;
             });
-            
+
             break
 
         case "roleCall":
@@ -721,7 +721,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
             }
         })
 
-        searchedRes.querySelector(".searched-addRole-val", () => {
+        searchedRes.querySelector(".searched-addRole-btn").addEventListener("click", () => {
             checkPermsArr()
             const addVal = selectNewPerms.value
             if (!currentSearchUpdates[userUID].permissions.includes(addVal)) {
@@ -731,12 +731,17 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
         searchedRes.querySelector(".searched-save").addEventListener("click", async () => {
             console.log(currentSearchUpdates[userUID].permissions)
-            const response = await fetchServer(`setPermissions`, { user: userUID, permissions: currentSearchUpdates[userUID].permissions })
+            const response = await fetchServer("setPermissions", {
+                uid: userUID,
+                allowed: currentSearchUpdates[userUID].allowed,
+                permissions: currentSearchUpdates[userUID].permissions
+            });
 
+            if (!response || response.error) {
+                alert(response?.error || "Failed to update permissions.");
+                return;
+            }
 
-            FirebaseUtils.updateDocument(`users/${userUID}`, currentSearchUpdates[userUID])
-
-            currentSearchUpdates[userUID] = {}
             const time = new Date()
             FirebaseUtils.ALog("Change Permissions", {
                 officer: user.uid,
@@ -745,6 +750,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
                 time: time.toLocaleString()
             })
 
+            currentSearchUpdates[userUID] = {};
 
         })
         mainContentArea.appendChild(searchedRes)
