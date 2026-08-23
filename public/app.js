@@ -1,4 +1,4 @@
-import { FirebaseUtils } from "../firebaseUtils.js"
+import { FirebaseUtils } from "./firebaseUtils.js";
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
