@@ -8,6 +8,6 @@ const firebaseConfig = {
     measurementId: "G-L2LD6HTME2"
 };
 
-import {Firebase} from "public/utils/firebaseUtilsClass.js"
+import {Firebase} from "/public/utils/firebaseUtilsClass.js"
 
 export const FirebaseUtils = new Firebase(firebaseConfig)
