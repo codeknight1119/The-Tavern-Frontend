@@ -253,6 +253,8 @@ dropdown-btn i {
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
+    width: 100%;
+    height: 100%;
 }
 
 .ProseMirror-focused {
