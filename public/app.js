@@ -672,259 +672,493 @@ searchUserDropdown.addEventListener("change", (event) => {
 
 document.getElementById("userSearchBttn").addEventListener("click", async () => {
 
-    let docs = null;
+    try {
 
-    switch (searchUserDropdown.value) {
+        let docs = [];
 
-        case "searchName":
+        // ========================================
+        // SEARCH USERS
+        // ========================================
 
-            if (
-                searchTermInput.value === undefined ||
-                searchTermInput.value.trim() === ""
-            ) {
-                alert("No search term provided");
-                return;
-            }
+        switch (searchUserDropdown.value) {
 
-            docs = await FirebaseUtils.getDocumentFieldIncludes(
-                "/users",
-                "Real Name",
-                searchTermInput.value
-            );
+            case "searchName": {
 
-            break;
+                const searchTerm = searchTermInput.value?.trim();
 
-        case "notAllowed":
-
-            // allowed is no longer stored in Firestore,
-            // so this search is handled through the backend.
-            docs = await fetchServer("getNotAllowedUsers", {});
-
-            if (!Array.isArray(docs)) {
-                alert(docs?.error || "Failed to find users.");
-                return;
-            }
-
-            break;
-    }
-
-    mainContentArea.replaceChildren();
-
-    if (!docs || docs.length === 0) {
-        const newP = document.createElement("p");
-
-        newP.innerText =
-            "No Person Found with name " +
-            searchTermInput.value +
-            ".";
-
-        mainContentArea.appendChild(newP);
-        return;
-    }
-
-    const searchedTemplate =
-        document.getElementById("userSearchTemplate");
-
-    for (const val of docs) {
-
-        const searchedRes =
-            searchedTemplate.content.cloneNode(true);
-
-        const userUID = val.id;
-
-        /*
-         * Get authorization information from Firebase Auth.
-         * This is intentionally done through the backend because
-         * custom claims cannot be read for arbitrary users from
-         * the client Firebase SDK.
-         */
-        const claimsResponse = await fetchServer(
-            "getUserClaims",
-            { uid: userUID }
-        );
-
-        if (!claimsResponse || claimsResponse.error) {
-            console.error(
-                `Could not retrieve claims for ${userUID}:`,
-                claimsResponse?.error
-            );
-
-            continue;
-        }
-
-        const userClaims = claimsResponse.claims || {};
-
-        const existingPermissions =
-            Array.isArray(userClaims.permissions)
-                ? userClaims.permissions
-                : [];
-
-        const existingAllowed =
-            userClaims.allowed === true;
-
-        /*
-         * Copy the current state into the local update object.
-         * This is important because saving without changing a
-         * field should preserve its current value.
-         */
-        currentSearchUpdates[userUID] = {
-            allowed: existingAllowed,
-            permissions: [...existingPermissions]
-        };
-
-        searchedRes.querySelector(".searched-Name").innerText =
-            val["Real Name"];
-
-        /*
-         * Display permissions
-         */
-        const rolesText =
-            existingPermissions.length > 0
-                ? existingPermissions.join(", ") + "."
-                : "None.";
-
-        searchedRes.querySelector(".searched-roles").innerText =
-            rolesText;
-
-        /*
-         * Allowed
-         */
-        const allowedEl =
-            searchedRes.querySelector(".searched-allowed");
-
-        allowedEl.value = String(existingAllowed);
-
-        /*
-         * Dues are still Firestore data, so this stays unchanged.
-         */
-        const duesEl =
-            searchedRes.querySelector(".searched-dues-paid");
-
-        duesEl.value = String(val.duesPaid);
-
-        /*
-         * Allowed change
-         */
-        allowedEl.addEventListener("change", (event) => {
-
-            const value = event.target.value;
-
-            currentSearchUpdates[userUID].allowed =
-                value.toLowerCase() === "true";
-
-        });
-
-        /*
-         * Permission selector
-         */
-        const selectNewPerms =
-            searchedRes.querySelector(".searched-addRole-val");
-
-        /*
-         * Revoke permission
-         */
-        searchedRes
-            .querySelector(".searched-revokeRole-btn")
-            .addEventListener("click", () => {
-
-                const removeVal = selectNewPerms.value;
-
-                currentSearchUpdates[userUID].permissions =
-                    currentSearchUpdates[userUID].permissions.filter(
-                        role => role !== removeVal
-                    );
-
-                /*
-                 * Update the displayed permissions immediately.
-                 */
-                searchedRes
-                    .querySelector(".searched-roles")
-                    .innerText =
-                    currentSearchUpdates[userUID].permissions.length > 0
-                        ? currentSearchUpdates[userUID].permissions.join(", ") + "."
-                        : "None.";
-            });
-
-        /*
-         * Add permission
-         */
-        searchedRes
-            .querySelector(".searched-addRole-btn")
-            .addEventListener("click", () => {
-
-                const addVal = selectNewPerms.value;
-
-                if (
-                    addVal &&
-                    !currentSearchUpdates[userUID].permissions.includes(addVal)
-                ) {
-                    currentSearchUpdates[userUID].permissions.push(addVal);
+                if (!searchTerm) {
+                    alert("No search term provided.");
+                    return;
                 }
 
-                /*
-                 * Update the displayed permissions immediately.
-                 */
-                searchedRes
-                    .querySelector(".searched-roles")
-                    .innerText =
-                    currentSearchUpdates[userUID].permissions.length > 0
-                        ? currentSearchUpdates[userUID].permissions.join(", ") + "."
-                        : "None.";
-            });
-
-        /*
-         * Save
-         */
-        searchedRes
-            .querySelector(".searched-save")
-            .addEventListener("click", async () => {
-
-                const update =
-                    currentSearchUpdates[userUID];
-
-                console.log("Saving claims:", update);
-
-                const response = await fetchServer(
-                    "setPermissions",
-                    {
-                        uid: userUID,
-                        allowed: update.allowed,
-                        permissions: update.permissions
-                    }
+                docs = await FirebaseUtils.getDocumentFieldIncludes(
+                    "/users",
+                    "Real Name",
+                    searchTerm
                 );
 
-                if (!response || response.error) {
+                break;
+            }
+
+            case "notAllowed": {
+
+                console.log("Requesting not allowed users...");
+
+                // IMPORTANT:
+                // Passing {} makes fetchServer use POST.
+                const response = await fetchServer(
+                    "getNotAllowedUsers",
+                    {}
+                );
+
+                console.log("Not allowed users response:", response);
+
+                if (!Array.isArray(response)) {
                     alert(
                         response?.error ||
-                        "Failed to update permissions."
+                        "The server did not return a valid user list."
                     );
                     return;
                 }
 
-                FirebaseUtils.ALog(
-                    "Change Permissions",
-                    {
-                        officer: user.uid,
-                        updated_user: userUID,
-                        data: JSON.stringify(update),
-                        time: new Date().toLocaleString()
-                    }
+                docs = response;
+
+                break;
+            }
+
+            default:
+
+                alert("Please select a search type.");
+
+                return;
+        }
+
+
+        // ========================================
+        // NO RESULTS
+        // ========================================
+
+        mainContentArea.replaceChildren();
+
+        if (!Array.isArray(docs) || docs.length === 0) {
+
+            const newP = document.createElement("p");
+
+            if (searchUserDropdown.value === "notAllowed") {
+                newP.innerText = "No users are currently awaiting approval.";
+            } else {
+                newP.innerText =
+                    "No person found with name " +
+                    searchTermInput.value +
+                    ".";
+            }
+
+            mainContentArea.appendChild(newP);
+
+            return;
+        }
+
+
+        // ========================================
+        // TEMPLATE
+        // ========================================
+
+        const searchedTemplate =
+            document.getElementById("userSearchTemplate");
+
+        if (!searchedTemplate) {
+            console.error("userSearchTemplate was not found.");
+            alert("User search template is missing.");
+            return;
+        }
+
+
+        // ========================================
+        // RENDER RESULTS
+        // ========================================
+
+        for (const val of docs) {
+
+            console.log("Rendering user:", val);
+
+            const searchedRes =
+                searchedTemplate.content.cloneNode(true);
+
+            const userUID = val.id;
+
+            if (!userUID) {
+                console.warn("Search result has no UID:", val);
+                continue;
+            }
+
+
+            // ========================================
+            // GET CUSTOM CLAIMS
+            // ========================================
+
+            let claims = val.claims || {};
+
+            /*
+             * Name searches come from Firestore, so they do not
+             * contain claims. Get them from the backend.
+             *
+             * getNotAllowedUsers already includes claims, so
+             * don't make another request for those users.
+             */
+            if (searchUserDropdown.value === "searchName") {
+
+                console.log(
+                    "Getting claims for:",
+                    userUID
                 );
 
-                /*
-                 * Keep the current state in the UI rather than
-                 * immediately throwing it away.
-                 */
-                currentSearchUpdates[userUID] = {
-                    allowed: update.allowed,
-                    permissions: [...update.permissions]
-                };
+                const claimsResponse =
+                    await fetchServer(
+                        "getUserClaims",
+                        {
+                            uid: userUID
+                        }
+                    );
 
-                alert("Permissions updated.");
-            });
+                console.log(
+                    "Claims response:",
+                    claimsResponse
+                );
 
-        mainContentArea.appendChild(searchedRes);
+                if (!claimsResponse || claimsResponse.error) {
+
+                    console.error(
+                        "Failed to get claims for",
+                        userUID,
+                        claimsResponse
+                    );
+
+                    alert(
+                        claimsResponse?.error ||
+                        `Could not retrieve permissions for ${val["Real Name"]}.`
+                    );
+
+                    continue;
+                }
+
+                claims = claimsResponse.claims || {};
+            }
+
+
+            // ========================================
+            // NORMALIZE CLAIMS
+            // ========================================
+
+            const allowed =
+                claims.allowed === true;
+
+            const permissions =
+                Array.isArray(claims.permissions)
+                    ? [...claims.permissions]
+                    : [];
+
+
+            // ========================================
+            // INITIALIZE UPDATE STATE
+            // ========================================
+
+            currentSearchUpdates[userUID] = {
+                allowed: allowed,
+                permissions: [...permissions]
+            };
+
+
+            // ========================================
+            // NAME
+            // ========================================
+
+            const nameEl =
+                searchedRes.querySelector(".searched-Name");
+
+            if (nameEl) {
+                nameEl.innerText =
+                    val["Real Name"] ||
+                    "Unknown User";
+            }
+
+
+            // ========================================
+            // ROLES
+            // ========================================
+
+            const rolesEl =
+                searchedRes.querySelector(".searched-roles");
+
+            function updateRolesDisplay() {
+
+                if (!rolesEl) {
+                    return;
+                }
+
+                if (
+                    currentSearchUpdates[userUID].permissions.length > 0
+                ) {
+
+                    rolesEl.innerText =
+                        currentSearchUpdates[userUID]
+                            .permissions
+                            .join(", ") + ".";
+
+                } else {
+
+                    rolesEl.innerText = "None.";
+                }
+            }
+
+            updateRolesDisplay();
+
+
+            // ========================================
+            // ALLOWED
+            // ========================================
+
+            const allowedEl =
+                searchedRes.querySelector(".searched-allowed");
+
+            if (allowedEl) {
+
+                allowedEl.value =
+                    String(
+                        currentSearchUpdates[userUID].allowed
+                    );
+
+                allowedEl.addEventListener(
+                    "change",
+                    (event) => {
+
+                        currentSearchUpdates[userUID].allowed =
+                            event.target.value.toLowerCase() === "true";
+
+                    }
+                );
+            }
+
+
+            // ========================================
+            // DUES
+            // ========================================
+
+            const duesEl =
+                searchedRes.querySelector(".searched-dues-paid");
+
+            if (duesEl) {
+
+                duesEl.value =
+                    String(val.duesPaid ?? false);
+
+            }
+
+
+            // ========================================
+            // ROLE SELECT
+            // ========================================
+
+            const selectNewPerms =
+                searchedRes.querySelector(
+                    ".searched-addRole-val"
+                );
+
+
+            // ========================================
+            // ADD ROLE
+            // ========================================
+
+            const addRoleButton =
+                searchedRes.querySelector(
+                    ".searched-addRole-btn"
+                );
+
+            if (addRoleButton) {
+
+                addRoleButton.addEventListener(
+                    "click",
+                    () => {
+
+                        const addVal =
+                            selectNewPerms?.value;
+
+                        if (!addVal) {
+                            return;
+                        }
+
+                        if (
+                            !currentSearchUpdates[userUID]
+                                .permissions
+                                .includes(addVal)
+                        ) {
+
+                            currentSearchUpdates[userUID]
+                                .permissions
+                                .push(addVal);
+
+                        }
+
+                        updateRolesDisplay();
+
+                    }
+                );
+            }
+
+
+            // ========================================
+            // REVOKE ROLE
+            // ========================================
+
+            const revokeRoleButton =
+                searchedRes.querySelector(
+                    ".searched-revokeRole-btn"
+                );
+
+            if (revokeRoleButton) {
+
+                revokeRoleButton.addEventListener(
+                    "click",
+                    () => {
+
+                        const removeVal =
+                            selectNewPerms?.value;
+
+                        if (!removeVal) {
+                            return;
+                        }
+
+                        currentSearchUpdates[userUID]
+                            .permissions =
+                            currentSearchUpdates[userUID]
+                                .permissions
+                                .filter(
+                                    role => role !== removeVal
+                                );
+
+                        updateRolesDisplay();
+
+                    }
+                );
+            }
+
+
+            // ========================================
+            // SAVE
+            // ========================================
+
+            const saveButton =
+                searchedRes.querySelector(
+                    ".searched-save"
+                );
+
+            if (saveButton) {
+
+                saveButton.addEventListener(
+                    "click",
+                    async () => {
+
+                        try {
+
+                            const update =
+                                currentSearchUpdates[userUID];
+
+                            console.log(
+                                "Saving user claims:",
+                                userUID,
+                                update
+                            );
+
+                            const response =
+                                await fetchServer(
+                                    "setPermissions",
+                                    {
+                                        uid: userUID,
+                                        allowed: update.allowed,
+                                        permissions: update.permissions
+                                    }
+                                );
+
+                            console.log(
+                                "setPermissions response:",
+                                response
+                            );
+
+                            if (!response || response.error) {
+
+                                alert(
+                                    response?.error ||
+                                    "Failed to update permissions."
+                                );
+
+                                return;
+                            }
+
+
+                            // ========================================
+                            // LOG CHANGE
+                            // ========================================
+
+                            FirebaseUtils.ALog(
+                                "Change Permissions",
+                                {
+                                    officer: user.uid,
+                                    updated_user: userUID,
+                                    data: JSON.stringify(update),
+                                    time: new Date().toLocaleString()
+                                }
+                            );
+
+
+                            // Keep the newly saved state.
+                            currentSearchUpdates[userUID] = {
+                                allowed: update.allowed,
+                                permissions: [
+                                    ...update.permissions
+                                ]
+                            };
+
+
+                            alert(
+                                "Permissions updated successfully."
+                            );
+
+                        } catch (error) {
+
+                            console.error(
+                                "Error saving permissions:",
+                                error
+                            );
+
+                            alert(
+                                "An error occurred while saving permissions."
+                            );
+                        }
+                    }
+                );
+            }
+
+
+            // ========================================
+            // ADD RESULT TO PAGE
+            // ========================================
+
+            mainContentArea.appendChild(
+                searchedRes
+            );
+        }
+
+    } catch (error) {
+
+        console.error(
+            "User search error:",
+            error
+        );
+
+        alert(
+            "Something went wrong while searching for users. Check the console for details."
+        );
     }
+
 });
 
 const campaign_divider = document.getElementById("campaign-splitScreenDivide");
