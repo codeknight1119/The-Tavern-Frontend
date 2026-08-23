@@ -5,7 +5,7 @@ import {
     deleteDoc, onSnapshot 
 } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
 import { 
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, getAdditionalUserInfo 
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, getAdditionalUserInfo, createUserWithEmailAndPassword 
 } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
 import { initializeAnalytics, logEvent } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js';
 

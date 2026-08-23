@@ -52,10 +52,10 @@ const messageInput = new Editor({
 
 async function checkUserManifest() {
     const localUserManifestTimestamp = Number(localStorage.getItem("userManifestTimestamp")) || 0;
-    const member_manifestTimestampData = await FirebaseUtils.getDocument("/users/userManifestTimestamp/");
+    const member_manifestTimestampData = await FirebaseUtils.getDocument("/manifest/userManifestTimestamp/");
     const member_manifestTimestamp = Number(member_manifestTimestampData?.timestamp) || 0;
     if (userManifest === null || member_manifestTimestamp > localUserManifestTimestamp) {
-        const rawData = await FirebaseUtils.getDocument("/users/userManifest");
+        const rawData = await FirebaseUtils.getDocument("/manifest/userManifest");
         localStorage.setItem("userManifestTimestamp", String(member_manifestTimestamp));
         if (rawData) {
             userManifest = rawData.manifest;
@@ -66,10 +66,10 @@ async function checkUserManifest() {
     console.log("userManifest", userManifest)
 
     const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
-    const guest_manifestTimestampData = await FirebaseUtils.getDocument("/users/guestManifestTimestamp/");
+    const guest_manifestTimestampData = await FirebaseUtils.getDocument("/manifest/guestManifestTimestamp/");
     const guest_manifestTimestamp = Number(guest_manifestTimestampData?.timestamp) || 0;
     if (guestManifest === null || guest_manifestTimestamp > localGuestManifestTimestamp || !localStorage.getItem("guestManifest")) {
-        const rawData = await FirebaseUtils.getDocument("/users/guestManifest");
+        const rawData = await FirebaseUtils.getDocument("/manifest/guestManifest");
         localStorage.setItem("guestManifestTimestamp", String(guest_manifestTimestamp));
         if (rawData) {
             guestManifest = rawData.manifest;
