@@ -877,8 +877,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
             if (nameEl) {
                 nameEl.innerText =
-                    val["Real Name"] ||
-                    "Unknown User";
+                    val["realName"]
             }
 
 
