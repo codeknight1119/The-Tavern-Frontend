@@ -17,6 +17,10 @@ export class Firebase {
         this.db = getFirestore(this.app);
         this.auth = getAuth(this.app);
         this.analytics = initializeAnalytics(this.app);
+
+        if (window.location.pathname.endsWith("/chat.html")) {
+            this.initializeSettingsUI();
+        }
     }
 
     async loginGoogle() {
@@ -35,8 +39,6 @@ export class Firebase {
         }
     }
 
-    // Firebase Email/Password auth is used for Tavern accounts without a personal email.
-    // The internal email is never shown to the user or used for email communication.
     getTavernAuthEmail(username) {
         return `${username.trim().toLowerCase()}@accounts.thetavern.local`;
     }
@@ -191,12 +193,178 @@ export class Firebase {
         });
     }
 
-    logout() {
+    async logout() {
         try {
-            return signOut(this.auth);
+            await signOut(this.auth);
         } catch (e) {
             console.error('logout error: ' + JSON.stringify(e));
+            throw e;
         }
+    }
+
+    initializeSettingsUI() {
+        if (document.getElementById("settings-btn")) return;
+
+        const style = document.createElement("style");
+        style.textContent = `
+            #settings-btn {
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
+                background: var(--base-clr);
+                color: var(--text-clr);
+                border: 1px solid var(--line-clr);
+                border-radius: .5em;
+                padding: .65em .8em;
+                font-size: 1.25rem;
+                cursor: pointer;
+            }
+            #settings-btn:hover { background: var(--hover-clr); }
+            #settings-panel {
+                position: fixed;
+                top: 65px;
+                right: 15px;
+                z-index: 1000;
+                width: min(350px, calc(100vw - 30px));
+                background: var(--base-clr);
+                color: var(--text-clr);
+                border: 2px solid var(--line-clr);
+                border-radius: 8px;
+                padding: 20px;
+                box-shadow: 0 5px 20px rgba(0,0,0,.35);
+            }
+            #settings-panel[hidden] { display: none; }
+            #settings-panel h2 { margin: 0 0 20px; }
+            #settings-close {
+                position: absolute;
+                top: 8px;
+                right: 10px;
+                border: none;
+                background: transparent;
+                color: var(--text-clr);
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+            .settings-section {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            #settings-name { padding: 8px; }
+            #settings-panel button:not(#settings-close) {
+                cursor: pointer;
+                padding: 8px 12px;
+            }
+            #settings-logout { margin-top: 5px; }
+            .settings-status { min-height: 1.2em; }
+            .settings-status.error { color: #ffb3b3; }
+        `;
+        document.head.appendChild(style);
+
+        const button = document.createElement("button");
+        button.id = "settings-btn";
+        button.title = "Settings";
+        button.ariaLabel = "Open settings";
+        button.innerHTML = '<i class="ra ra-gears"></i>';
+
+        const panel = document.createElement("div");
+        panel.id = "settings-panel";
+        panel.hidden = true;
+        panel.innerHTML = `
+            <button id="settings-close" aria-label="Close settings">&times;</button>
+            <h2>Settings</h2>
+            <div class="settings-section">
+                <label for="settings-name">Username</label>
+                <input id="settings-name" type="text" autocomplete="off" maxlength="30">
+                <button id="settings-save-name">Save Username</button>
+                <p id="settings-name-status" class="settings-status"></p>
+            </div>
+            <div class="settings-section">
+                <button id="settings-logout">Log Out</button>
+            </div>
+        `;
+
+        document.body.append(button, panel);
+
+        const nameInput = panel.querySelector("#settings-name");
+        const status = panel.querySelector("#settings-name-status");
+        const saveButton = panel.querySelector("#settings-save-name");
+
+        const setStatus = (message, error = false) => {
+            status.textContent = message;
+            status.classList.toggle("error", error);
+        };
+
+        button.addEventListener("click", async () => {
+            panel.hidden = !panel.hidden;
+            if (panel.hidden) return;
+
+            setStatus("");
+            try {
+                const signedIn = await this.isSignedIn();
+                if (!signedIn) {
+                    window.location.href = "/signIn";
+                    return;
+                }
+                const user = await this.getDocument(`/users/${signedIn.user.uid}`);
+                nameInput.value = user?.displayName || user?.name || "";
+            } catch (error) {
+                console.error("Could not load settings:", error);
+                setStatus("Could not load your settings.", true);
+            }
+        });
+
+        panel.querySelector("#settings-close").addEventListener("click", () => {
+            panel.hidden = true;
+        });
+
+        saveButton.addEventListener("click", async () => {
+            const name = nameInput.value.trim();
+            if (!/^[a-zA-Z0-9._-]{3,30}$/.test(name)) {
+                setStatus("Username must be 3-30 characters and use only letters, numbers, periods, underscores, or hyphens.", true);
+                return;
+            }
+
+            saveButton.disabled = true;
+            setStatus("Saving...");
+
+            try {
+                const signedIn = await this.isSignedIn();
+                if (!signedIn) {
+                    window.location.href = "/signIn";
+                    return;
+                }
+
+                await this.updateDocument(`/users/${signedIn.user.uid}`, {
+                    displayName: name,
+                    name: name
+                });
+
+                try {
+                    await this.setDocument("/manifest/userManifestTimestamp", { timestamp: Date.now() });
+                } catch (error) {
+                    console.warn("Could not update user manifest timestamp:", error);
+                }
+
+                setStatus("Username updated.");
+            } catch (error) {
+                console.error("Failed to update username:", error);
+                setStatus("Could not update your username. Please try again.", true);
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        panel.querySelector("#settings-logout").addEventListener("click", async () => {
+            try {
+                await this.logout();
+                window.location.href = "/signIn";
+            } catch (error) {
+                setStatus("Could not log out. Please try again.", true);
+            }
+        });
     }
 
     ALog(eventName, data) {
