@@ -17,9 +17,13 @@ export class Firebase {
         this.db = getFirestore(this.app);
         this.auth = getAuth(this.app);
         this.analytics = initializeAnalytics(this.app);
+        globalThis.__tavernFirebase = this;
+        this.__activeCampaignId = null;
+        this.__campaignIds = new Set();
 
         if (window.location.pathname.endsWith("/chat.html")) {
             this.initializeSettingsUI();
+            this.initializeCampaignRouting();
         }
     }
 
@@ -65,6 +69,13 @@ export class Firebase {
         }
     }
 
+    resolveCampaignPath(path) {
+        if (!this.__activeCampaignId || typeof path !== 'string') return path;
+        const match = path.match(/^\/?features\/([^/]+)\/messages(?:\/.*)?$/);
+        if (!match) return path;
+        return path.replace(/^\/?features\/[^/]+\//, `campaigns/${this.__activeCampaignId}/`);
+    }
+
     async setDocument(path, data) {
         try {
             await firestoreSetDoc(doc(this.db, path), data);
@@ -76,7 +87,8 @@ export class Firebase {
 
     async addDocument(path, data) {
         try {
-            const docAdded = await addDoc(collection(this.db, path), data);
+            const resolvedPath = this.resolveCampaignPath(path);
+            const docAdded = await addDoc(collection(this.db, resolvedPath), data);
             return docAdded;
         } catch (e) {
             console.error(`add doc failed at ${path} `, e);
@@ -106,6 +118,7 @@ export class Firebase {
 
     async getDocuments(path, l, docParam, arrayFilter) {
         try {
+            const resolvedPath = this.resolveCampaignPath(path);
             let constraints = [];
 
             if (arrayFilter && arrayFilter.field && arrayFilter.value !== undefined) {
@@ -124,7 +137,7 @@ export class Firebase {
                 constraints.push(limit(l));
             }
 
-            const querySnapshot = await getDocs(query(collection(this.db, path), ...constraints));
+            const querySnapshot = await getDocs(query(collection(this.db, resolvedPath), ...constraints));
 
             return querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -152,7 +165,8 @@ export class Firebase {
     }
 
     listenForNewDocInCollection(path, callback) {
-        const docQuery = query(collection(this.db, path), where('timestamp', '>', Date.now()));
+        const resolvedPath = this.resolveCampaignPath(path);
+        const docQuery = query(collection(this.db, resolvedPath), where('timestamp', '>', Date.now()));
         return onSnapshot(docQuery, (snap) => {
             snap.docChanges().forEach(change => {
                 if (change.type === 'added') callback(change.doc.data());
@@ -200,6 +214,33 @@ export class Firebase {
             console.error('logout error: ' + JSON.stringify(e));
             throw e;
         }
+    }
+
+    initializeCampaignRouting() {
+        if (globalThis.__tavernCampaignRoutingInitialized) return;
+        globalThis.__tavernCampaignRoutingInitialized = true;
+
+        document.addEventListener("click", async (event) => {
+            const navButton = event.target.closest?.(".nav-btn[data-id]");
+            if (!navButton) return;
+
+            const id = navButton.dataset.id;
+            const signedIn = await this.isSignedIn();
+            if (!signedIn) {
+                this.__activeCampaignId = null;
+                return;
+            }
+
+            try {
+                const currentUser = await this.getDocument(`/users/${signedIn.user.uid}`);
+                const campaigns = Array.isArray(currentUser?.campaigns) ? currentUser.campaigns : [];
+                this.__campaignIds = new Set(campaigns.map(entry => entry?.id).filter(Boolean));
+                this.__activeCampaignId = this.__campaignIds.has(id) ? id : null;
+            } catch (error) {
+                console.error("Could not determine campaign membership:", error);
+                this.__activeCampaignId = null;
+            }
+        }, true);
     }
 
     initializeSettingsUI() {
@@ -375,3 +416,183 @@ export class Firebase {
         }
     }
 }
+
+globalThis.renderCampaign = async function(campaignId) {
+    const firebase = globalThis.__tavernFirebase;
+    if (!firebase) return;
+    firebase.__activeCampaignId = campaignId;
+
+    const signedIn = await firebase.isSignedIn();
+    if (!signedIn) return;
+
+    const currentUser = await firebase.getDocument(`/users/${signedIn.user.uid}`);
+    const membership = Array.isArray(currentUser?.campaigns)
+        ? currentUser.campaigns.find(entry => entry?.id === campaignId)
+        : null;
+    const isDM = membership?.DM === true;
+    const campaign = await firebase.getDocument(`/campaigns/${campaignId}`);
+    const campaignUI = document.getElementById("campaignUI");
+    if (!campaign || !campaignUI) return;
+
+    let header = campaignUI.querySelector("#campaign-header");
+    if (!header) {
+        header = document.createElement("section");
+        header.id = "campaign-header";
+        header.style.cssText = "display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;";
+        campaignUI.prepend(header);
+    }
+
+    let iconDisplay = header.querySelector("#campaign-icon-display");
+    if (!iconDisplay) {
+        iconDisplay = document.createElement("i");
+        iconDisplay.id = "campaign-icon-display";
+        header.appendChild(iconDisplay);
+    }
+
+    let nameDisplay = header.querySelector("#campaign-name-display");
+    if (!nameDisplay) {
+        nameDisplay = document.createElement("h2");
+        nameDisplay.id = "campaign-name-display";
+        nameDisplay.className = "cinzel-title";
+        nameDisplay.style.margin = "0";
+        header.appendChild(nameDisplay);
+    }
+
+    nameDisplay.textContent = campaign.name || "Unnamed Campaign";
+    iconDisplay.className = `ra ra-3x ${String(campaign.icon || "").trim() || "ra-scroll-unfurled"}`;
+
+    let controls = campaignUI.querySelector("#campaign-dm-controls");
+    if (!controls) {
+        controls = document.createElement("section");
+        controls.id = "campaign-dm-controls";
+        controls.style.cssText = "border:1px solid var(--line-clr);border-radius:8px;padding:14px;margin-bottom:18px;";
+        controls.innerHTML = `<h3>DM Controls</h3><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;"><label for="campaign-name-input">Campaign name:</label><input id="campaign-name-input" type="text" maxlength="100"><button id="campaign-save-name" type="button">Rename Campaign</button><span id="campaign-name-status" aria-live="polite"></span></div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;"><label for="campaign-icon-input">RPG Awesome icon:</label><input id="campaign-icon-input" type="text" maxlength="60" placeholder="ra-dragon"><button id="campaign-save-icon" type="button">Save Icon</button><a href="https://nagoshiashumari.github.io/Rpg-Awesome/" target="_blank" rel="noopener noreferrer">Browse RPG Awesome icons</a><span id="campaign-icon-status" aria-live="polite"></span></div><div><h4>Add People</h4><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;"><input id="campaign-player-search" type="text" maxlength="100" placeholder="Search by name or username..."><button id="campaign-player-search-btn" type="button">Search</button></div><div id="campaign-player-search-results" style="margin-top:10px;"></div></div>`;
+        campaignUI.insertBefore(controls, campaignUI.querySelector("#campaign-left"));
+    }
+    controls.hidden = !isDM;
+
+    let chat = campaignUI.querySelector("#campaign-chat");
+    if (!chat) {
+        chat = document.createElement("div");
+        chat.id = "campaign-chat";
+        chat.style.marginBottom = "18px";
+        campaignUI.insertBefore(chat, campaignUI.querySelector("#campaign-left"));
+    }
+
+    const chatTools = document.getElementById("chatTools");
+    if (chatTools) chatTools.hidden = false;
+    chat.replaceChildren();
+
+    const messages = await firebase.getDocuments(`/campaigns/${campaignId}/messages`, 50);
+    if (!messages.length) {
+        chat.innerHTML = "<h3>No Messages</h3>";
+    } else {
+        messages.forEach(data => {
+            const isMine = data.uid === signedIn.user.uid ? "mine" : "notMine";
+            const content = globalThis.marked ? globalThis.marked.parse(data.content || "") : String(data.content || "");
+            chat.insertAdjacentHTML("beforeend", `<div class="message ${isMine}"><strong><p>${data.username || data.name || "Unknown"}:</p></strong><div>${content}</div></div>`);
+        });
+    }
+
+    if (!isDM) return;
+
+    const nameInput = controls.querySelector("#campaign-name-input");
+    const iconInput = controls.querySelector("#campaign-icon-input");
+    const nameStatus = controls.querySelector("#campaign-name-status");
+    const iconStatus = controls.querySelector("#campaign-icon-status");
+    const playerSearch = controls.querySelector("#campaign-player-search");
+    const playerSearchButton = controls.querySelector("#campaign-player-search-btn");
+    const playerResults = controls.querySelector("#campaign-player-search-results");
+    nameInput.value = campaign.name || "";
+    iconInput.value = campaign.icon || "";
+    nameStatus.textContent = "";
+    iconStatus.textContent = "";
+    playerResults.replaceChildren();
+
+    const status = (element, message, error = false) => {
+        element.textContent = message;
+        element.style.color = error ? "#ffb3b3" : "";
+    };
+
+    controls.querySelector("#campaign-save-name").onclick = async () => {
+        const name = nameInput.value.trim();
+        if (!name) return status(nameStatus, "Campaign name cannot be empty.", true);
+        try {
+            await firebase.updateDocument(`/campaigns/${campaignId}`, { name });
+            nameDisplay.textContent = name;
+            document.querySelectorAll(`.nav-btn[data-id="${CSS.escape(campaignId)}"] .sidebarText`).forEach(el => el.textContent = name);
+            status(nameStatus, "Campaign renamed.");
+        } catch (error) {
+            console.error(error);
+            status(nameStatus, "Could not rename the campaign.", true);
+        }
+    };
+
+    controls.querySelector("#campaign-save-icon").onclick = async () => {
+        const icon = iconInput.value.trim();
+        try {
+            await firebase.updateDocument(`/campaigns/${campaignId}`, { icon });
+            iconDisplay.className = `ra ra-3x ${icon || "ra-scroll-unfurled"}`;
+            status(iconStatus, "Icon updated.");
+        } catch (error) {
+            console.error(error);
+            status(iconStatus, "Could not update the campaign icon.", true);
+        }
+    };
+
+    const searchPlayers = async () => {
+        const term = playerSearch.value.trim().toLowerCase();
+        playerResults.replaceChildren();
+        if (!term) return;
+        try {
+            const rawManifest = await firebase.getDocument("/manifest/userManifest");
+            const manifest = Array.isArray(rawManifest?.manifest) ? rawManifest.manifest : [];
+            const matches = manifest.filter(person => person?.id && person.id !== signedIn.user.uid && (String(person.name || "").toLowerCase().includes(term) || String(person["Real Name"] || "").toLowerCase().includes(term)));
+            if (!matches.length) {
+                playerResults.textContent = "No users found.";
+                return;
+            }
+            for (const person of matches) {
+                const row = document.createElement("div");
+                row.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap;";
+                const label = document.createElement("span");
+                label.textContent = `${person["Real Name"] || "Unknown"}${person.name ? ` (${person.name})` : ""}`;
+                const add = document.createElement("button");
+                add.type = "button";
+                add.textContent = "Add to Campaign";
+                add.onclick = async () => {
+                    add.disabled = true;
+                    try {
+                        const target = await firebase.getDocument(`/users/${person.id}`);
+                        const campaigns = Array.isArray(target?.campaigns) ? [...target.campaigns] : [];
+                        if (campaigns.some(entry => entry?.id === campaignId)) {
+                            add.textContent = "Already Added";
+                            return;
+                        }
+                        campaigns.push({ id: campaignId, DM: false });
+                        await firebase.updateDocument(`/users/${person.id}`, { campaigns });
+                        add.textContent = "Added";
+                        status(nameStatus, `${person.name || "User"} was added to the campaign.`);
+                    } catch (error) {
+                        console.error(error);
+                        add.disabled = false;
+                        status(nameStatus, "Could not add that player.", true);
+                    }
+                };
+                row.append(label, add);
+                playerResults.appendChild(row);
+            }
+        } catch (error) {
+            console.error(error);
+            playerResults.textContent = "Could not search for users.";
+        }
+    };
+
+    playerSearchButton.onclick = searchPlayers;
+    playerSearch.onkeydown = event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchPlayers();
+        }
+    };
+};
