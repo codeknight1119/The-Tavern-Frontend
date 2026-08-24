@@ -4,7 +4,7 @@ const firebaseConfig = {
     projectId: "wchs-thetavern",
     storageBucket: "wchs-thetavern.firebasestorage.app",
     messagingSenderId: "1067002790985",
-    appId: "1:7002790985:web:5835522f0afede84deeb98",
+    appId: "1:1067002790985:web:5835522f0afede84deeb98",
     measurementId: "G-L2LD6HTME2"
 };
 
