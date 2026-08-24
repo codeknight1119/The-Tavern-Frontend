@@ -1,10 +1,10 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-K-uUwx4SvE",
+    apiKey: "AIzaSyCQSv-B_1LiYwW6_XDMCesK-uUwx4SvE",
     authDomain: "wchs-thetavern.firebaseapp.com",
     projectId: "wchs-thetavern",
     storageBucket: "wchs-thetavern.firebasestorage.app",
     messagingSenderId: "1067002790985",
-    appId: "1:1067002790985:web:5835522f0afede84deeb98",
+    appId: "1:7002790985:web:5835522f0afede84deeb98",
     measurementId: "G-L2LD6HTME2"
 };
 
@@ -17,7 +17,7 @@ export const FirebaseUtils = new Firebase(firebaseConfig);
 // current Firebase user's ID token to requests made to the backend.
 const originalFetch = globalThis.fetch.bind(globalThis);
 globalThis.fetch = async (input, init = {}) => {
-    const url = typeof input === "string" ? input : input?.url;
+    let url = typeof input === "string" ? input : input?.url;
 
     if (typeof url === "string" && url.startsWith("https://the-tavern-backend.onrender.com/")) {
         const currentUser = FirebaseUtils.auth.currentUser;
@@ -30,6 +30,27 @@ globalThis.fetch = async (input, init = {}) => {
             headers.set("Authorization", `Bearer ${token}`);
             init = { ...init, headers };
         }
+
+        // The old backend used /serverStatus. The current Render backend
+        // exposes the public health check at /health instead.
+        const isLegacyServerStatus = url === "https://the-tavern-backend.onrender.com/serverStatus";
+        if (isLegacyServerStatus) {
+            url = "https://the-tavern-backend.onrender.com/health";
+            input = url;
+        }
+
+        const response = await originalFetch(input, init);
+
+        // app.js still expects the old { status: "ok" } response.
+        if (isLegacyServerStatus && response.ok) {
+            return new Response(JSON.stringify({ status: "ok" }), {
+                status: response.status,
+                statusText: response.statusText,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+
+        return response;
     }
 
     return originalFetch(input, init);
