@@ -784,7 +784,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
             const searchedRes =
                 searchedTemplate.content.cloneNode(true);
 
-            const userUID = val.id;
+            const userUID = val.id || val.uid;
 
             if (!userUID) {
                 console.warn("Search result has no UID:", val);
@@ -877,7 +877,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
             if (nameEl) {
                 nameEl.innerText =
-                    val["realName"]
+                    val["Real Name"] || val.realName || val.displayName || val.name || userUID
             }
 
 
@@ -1240,46 +1240,77 @@ function stopResizing() {
 }
 
 
-async function fetchServer(endpoint, postData) {
-    const popup = document.getElementById("loading-popup");
-    const token = await firebaseUser.getIdToken();
-    const link = `https://the-tavern-backend.onrender.com/${endpoint}`;
+const backendUrl = "https://the-tavern-backend.onrender.com";
 
+async function fetchWithTimeout(url, options, timeout = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function waitForServer() {
+    const popup = document.getElementById("loading-popup");
+    if (popup) popup.hidden = false;
+
+    while (true) {
+        try {
+            const healthResponse = await fetchWithTimeout(`${backendUrl}/health`, { method: "GET" });
+            if (healthResponse.ok) {
+                if (popup) popup.hidden = true;
+                return;
+            }
+        } catch (error) { }
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+}
+
+async function fetchServer(endpoint, postData) {
+    if (!firebaseUser) {
+        throw new Error("A signed-in Firebase user is required for backend requests.");
+    }
+
+    const token = await firebaseUser.getIdToken();
+    const link = `${backendUrl}/${endpoint}`;
     const headers = { Authorization: `Bearer ${token}` };
-    if (postData) {
+    if (postData !== undefined) {
         headers["Content-Type"] = "application/json";
     }
 
     const options = {
-        method: postData ? "POST" : "GET",
-        headers: headers,
-        ...(postData && { body: JSON.stringify(postData) })
+        method: postData !== undefined ? "POST" : "GET",
+        headers,
+        ...(postData !== undefined && { body: JSON.stringify(postData) })
     };
 
-    // Step 1: Fast check to see if the server is awake
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
-
     try {
-        const response = await fetch(link, { ...options, signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        return await response.json();
-    } catch (err) {
-        if (err.name === "AbortError") {
-            if (popup) popup.hidden = false;
-
-            try {
-                const response = await fetch(link, options);
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                return await response.json();
-            } finally {
-                // Ensure popup hides once finished (success or fail)
-                if (popup) popup.hidden = true;
-            }
+        const response = await fetchWithTimeout(link, options);
+        if (response.status === 401 || response.status === 403) {
+            throw new Error(`Backend request denied (${response.status}).`);
         }
-        throw err;
+        if (!response.ok) {
+            throw new Error(`Backend request failed (${response.status}).`);
+        }
+        return await response.json();
+    } catch (error) {
+        if (error.message.startsWith("Backend request denied") ||
+            error.message.startsWith("Backend request failed (4")) {
+            throw error;
+        }
+
+        await waitForServer();
+        const response = await fetchWithTimeout(link, options);
+        if (response.status === 401 || response.status === 403) {
+            throw new Error(`Backend request denied (${response.status}).`);
+        }
+        if (!response.ok) {
+            throw new Error(`Backend request failed (${response.status}).`);
+        }
+        return await response.json();
     }
 }
 
