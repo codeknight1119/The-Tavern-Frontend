@@ -51,33 +51,56 @@ const messageInput = new Editor({
 //////////////////////////////////////////////////////////////////////
 
 async function checkUserManifest() {
-    const localUserManifestTimestamp = Number(localStorage.getItem("userManifestTimestamp")) || 0;
-    const member_manifestTimestampData = await FirebaseUtils.getDocument("/manifest/userManifestTimestamp/");
-    const member_manifestTimestamp = Number(member_manifestTimestampData?.timestamp) || 0;
-    if (userManifest === null || member_manifestTimestamp > localUserManifestTimestamp) {
-        const rawData = await FirebaseUtils.getDocument("/manifest/userManifest");
-        localStorage.setItem("userManifestTimestamp", String(member_manifestTimestamp));
-        if (rawData) {
-            userManifest = rawData.manifest;
-        } else {
-            userManifest = []
-        }
-    }
-    console.log("userManifest", userManifest)
+    // 1. Fetch BOTH timestamps from Firebase at the exact same time
+    const [member_manifestTimestampData, guest_manifestTimestampData] = await Promise.all([
+        FirebaseUtils.getDocument("/manifest/userManifestTimestamp/"),
+        FirebaseUtils.getDocument("/manifest/guestManifestTimestamp/")
+    ]);
 
-    const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
-    const guest_manifestTimestampData = await FirebaseUtils.getDocument("/manifest/guestManifestTimestamp/");
+    const member_manifestTimestamp = Number(member_manifestTimestampData?.timestamp) || 0;
     const guest_manifestTimestamp = Number(guest_manifestTimestampData?.timestamp) || 0;
-    if (guestManifest === null || guest_manifestTimestamp > localGuestManifestTimestamp || !localStorage.getItem("guestManifest")) {
-        const rawData = await FirebaseUtils.getDocument("/manifest/guestManifest");
-        localStorage.setItem("guestManifestTimestamp", String(guest_manifestTimestamp));
-        if (rawData) {
-            guestManifest = rawData.manifest;
-        } else {
-            guestManifest = []
-        }
+
+    const localUserManifestTimestamp = Number(localStorage.getItem("userManifestTimestamp")) || 0;
+    const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
+
+    const cachedUserManifest = localStorage.getItem("userManifest");
+    const cachedGuestManifest = localStorage.getItem("guestManifest");
+
+    // 2. Determine exactly what needs to be fetched
+    const needsUserFetch = !userManifest || !cachedUserManifest || member_manifestTimestamp > localUserManifestTimestamp;
+    const needsGuestFetch = !guestManifest || !cachedGuestManifest || guest_manifestTimestamp > localGuestManifestTimestamp;
+
+    // 3. Set up our fetch promises (if they don't need fetching, we resolve immediately with null)
+    const userFetchPromise = needsUserFetch 
+        ? FirebaseUtils.getDocument("/manifest/userManifest") 
+        : Promise.resolve(null);
+        
+    const guestFetchPromise = needsGuestFetch 
+        ? FirebaseUtils.getDocument("/manifest/guestManifest") 
+        : Promise.resolve(null);
+
+    // 4. Fetch the required manifests concurrently
+    const [rawUserData, rawGuestData] = await Promise.all([userFetchPromise, guestFetchPromise]);
+
+    // 5. Process User Manifest
+    if (needsUserFetch) {
+        localStorage.setItem("userManifestTimestamp", String(member_manifestTimestamp));
+        userManifest = rawUserData ? rawUserData.manifest : [];
+        localStorage.setItem("userManifest", JSON.stringify(userManifest));
+    } else if (!userManifest && cachedUserManifest) {
+        userManifest = JSON.parse(cachedUserManifest);
     }
-    console.log("guestManifest", guestManifest)
+    console.log("userManifest", userManifest);
+
+    // 6. Process Guest Manifest
+    if (needsGuestFetch) {
+        localStorage.setItem("guestManifestTimestamp", String(guest_manifestTimestamp));
+        guestManifest = rawGuestData ? rawGuestData.manifest : [];
+        localStorage.setItem("guestManifest", JSON.stringify(guestManifest));
+    } else if (!guestManifest && cachedGuestManifest) {
+        guestManifest = JSON.parse(cachedGuestManifest);
+    }
+    console.log("guestManifest", guestManifest);
 }
 
 const toggleButton = document.getElementById("toggle-btn")
