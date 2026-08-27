@@ -50,177 +50,76 @@ const messageInput = new Editor({
 /////////////////////////SITE UTILS///////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 async function checkUserManifest() {
+    console.log("=== USER MANIFEST DEBUG START ===");
+
     try {
-        // Always get the current Firebase timestamps first.
-        const [userTimestampData, guestTimestampData] = await Promise.all([
-            FirebaseUtils.getDocument("/manifest/userManifestTimestamp"),
-            FirebaseUtils.getDocument("/manifest/guestManifestTimestamp")
-        ]);
+        const timestampData =
+            await FirebaseUtils.getDocument("/manifest/userManifestTimestamp");
 
-        const serverUserTimestamp =
-            Number(userTimestampData?.timestamp) || 0;
+        console.log(
+            "Manifest timestamp document:",
+            timestampData
+        );
 
-        const serverGuestTimestamp =
-            Number(guestTimestampData?.timestamp) || 0;
+        const manifestData =
+            await FirebaseUtils.getDocument("/manifest/userManifest");
 
-        const localUserTimestamp =
-            Number(localStorage.getItem("userManifestTimestamp")) || 0;
+        console.log(
+            "Raw manifest document:",
+            manifestData
+        );
 
-        const localGuestTimestamp =
-            Number(localStorage.getItem("guestManifestTimestamp")) || 0;
+        console.log(
+            "Raw manifest.manifest:",
+            manifestData?.manifest
+        );
 
-        /*
-         * User manifest
-         *
-         * If:
-         *  - we don't have a manifest in memory,
-         *  - we don't have one cached locally, OR
-         *  - the backend timestamp is newer,
-         *
-         * fetch the current manifest.
-         */
-        const cachedUserManifest =
-            localStorage.getItem("userManifest");
-
-        if (
-            !cachedUserManifest ||
-            !userManifest ||
-            serverUserTimestamp > localUserTimestamp
-        ) {
-            console.log(
-                "Fetching updated user manifest.",
-                {
-                    serverTimestamp: serverUserTimestamp,
-                    localTimestamp: localUserTimestamp
-                }
+        if (!manifestData) {
+            console.error(
+                "ERROR: /manifest/userManifest does not exist."
             );
 
-            const rawUserData =
-                await FirebaseUtils.getDocument("/manifest/userManifest");
-
-            userManifest =
-                Array.isArray(rawUserData?.manifest)
-                    ? rawUserData.manifest
-                    : [];
-
-            localStorage.setItem(
-                "userManifest",
-                JSON.stringify(userManifest)
-            );
-
-            localStorage.setItem(
-                "userManifestTimestamp",
-                String(serverUserTimestamp)
-            );
-        } else {
-            // Use the cached manifest if the server says it is still current.
-            try {
-                userManifest = JSON.parse(cachedUserManifest);
-
-                if (!Array.isArray(userManifest)) {
-                    throw new Error("Cached user manifest is not an array.");
-                }
-            } catch (error) {
-                console.warn(
-                    "Cached user manifest was invalid. Refetching.",
-                    error
-                );
-
-                const rawUserData =
-                    await FirebaseUtils.getDocument("/manifest/userManifest");
-
-                userManifest =
-                    Array.isArray(rawUserData?.manifest)
-                        ? rawUserData.manifest
-                        : [];
-
-                localStorage.setItem(
-                    "userManifest",
-                    JSON.stringify(userManifest)
-                );
-
-                localStorage.setItem(
-                    "userManifestTimestamp",
-                    String(serverUserTimestamp)
-                );
-            }
+            userManifest = [];
+            return;
         }
 
-
-        /*
-         * Guest manifest
-         */
-        const cachedGuestManifest =
-            localStorage.getItem("guestManifest");
-
-        if (
-            !cachedGuestManifest ||
-            !guestManifest ||
-            serverGuestTimestamp > localGuestTimestamp
-        ) {
-            console.log(
-                "Fetching updated guest manifest.",
-                {
-                    serverTimestamp: serverGuestTimestamp,
-                    localTimestamp: localGuestTimestamp
-                }
+        if (!Array.isArray(manifestData.manifest)) {
+            console.error(
+                "ERROR: /manifest/userManifest exists, but .manifest is not an array.",
+                manifestData.manifest
             );
 
-            const rawGuestData =
-                await FirebaseUtils.getDocument("/manifest/guestManifest");
-
-            guestManifest =
-                Array.isArray(rawGuestData?.manifest)
-                    ? rawGuestData.manifest
-                    : [];
-
-            localStorage.setItem(
-                "guestManifest",
-                JSON.stringify(guestManifest)
-            );
-
-            localStorage.setItem(
-                "guestManifestTimestamp",
-                String(serverGuestTimestamp)
-            );
-        } else {
-            try {
-                guestManifest = JSON.parse(cachedGuestManifest);
-
-                if (!Array.isArray(guestManifest)) {
-                    throw new Error("Cached guest manifest is not an array.");
-                }
-            } catch (error) {
-                console.warn(
-                    "Cached guest manifest was invalid. Refetching.",
-                    error
-                );
-
-                const rawGuestData =
-                    await FirebaseUtils.getDocument("/manifest/guestManifest");
-
-                guestManifest =
-                    Array.isArray(rawGuestData?.manifest)
-                        ? rawGuestData.manifest
-                        : [];
-
-                localStorage.setItem(
-                    "guestManifest",
-                    JSON.stringify(guestManifest)
-                );
-
-                localStorage.setItem(
-                    "guestManifestTimestamp",
-                    String(serverGuestTimestamp)
-                );
-            }
+            userManifest = [];
+            return;
         }
 
-        console.log("userManifest", userManifest);
-        console.log("guestManifest", guestManifest);
+        userManifest = manifestData.manifest;
+
+        console.log(
+            `Loaded ${userManifest.length} users into userManifest.`
+        );
+
+        if (userManifest.length > 0) {
+            console.log(
+                "First manifest entry:",
+                userManifest[0]
+            );
+
+            console.log(
+                "Manifest fields:",
+                Object.keys(userManifest[0])
+            );
+        }
+
+        console.log("=== USER MANIFEST DEBUG END ===");
 
     } catch (error) {
-        console.error("Could not load user manifests:", error);
+        console.error(
+            "ERROR loading user manifest:",
+            error
+        );
+
+        userManifest = [];
         throw error;
     }
 }
