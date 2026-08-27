@@ -49,58 +49,180 @@ const messageInput = new Editor({
 //////////////////////////////////////////////////////////////////////
 /////////////////////////SITE UTILS///////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-
 async function checkUserManifest() {
-    // 1. Fetch BOTH timestamps from Firebase at the exact same time
-    const [member_manifestTimestampData, guest_manifestTimestampData] = await Promise.all([
-        FirebaseUtils.getDocument("/manifest/userManifestTimestamp/"),
-        FirebaseUtils.getDocument("/manifest/guestManifestTimestamp/")
-    ]);
+    try {
+        // Always get the current Firebase timestamps first.
+        const [userTimestampData, guestTimestampData] = await Promise.all([
+            FirebaseUtils.getDocument("/manifest/userManifestTimestamp"),
+            FirebaseUtils.getDocument("/manifest/guestManifestTimestamp")
+        ]);
 
-    const member_manifestTimestamp = Number(member_manifestTimestampData?.timestamp) || 0;
-    const guest_manifestTimestamp = Number(guest_manifestTimestampData?.timestamp) || 0;
+        const serverUserTimestamp =
+            Number(userTimestampData?.timestamp) || 0;
 
-    const localUserManifestTimestamp = Number(localStorage.getItem("userManifestTimestamp")) || 0;
-    const localGuestManifestTimestamp = Number(localStorage.getItem("guestManifestTimestamp")) || 0;
+        const serverGuestTimestamp =
+            Number(guestTimestampData?.timestamp) || 0;
 
-    const cachedUserManifest = localStorage.getItem("userManifest");
-    const cachedGuestManifest = localStorage.getItem("guestManifest");
+        const localUserTimestamp =
+            Number(localStorage.getItem("userManifestTimestamp")) || 0;
 
-    // 2. Determine exactly what needs to be fetched
-    const needsUserFetch = !userManifest || !cachedUserManifest || member_manifestTimestamp > localUserManifestTimestamp;
-    const needsGuestFetch = !guestManifest || !cachedGuestManifest || guest_manifestTimestamp > localGuestManifestTimestamp;
+        const localGuestTimestamp =
+            Number(localStorage.getItem("guestManifestTimestamp")) || 0;
 
-    // 3. Set up our fetch promises (if they don't need fetching, we resolve immediately with null)
-    const userFetchPromise = needsUserFetch 
-        ? FirebaseUtils.getDocument("/manifest/userManifest") 
-        : Promise.resolve(null);
-        
-    const guestFetchPromise = needsGuestFetch 
-        ? FirebaseUtils.getDocument("/manifest/guestManifest") 
-        : Promise.resolve(null);
+        /*
+         * User manifest
+         *
+         * If:
+         *  - we don't have a manifest in memory,
+         *  - we don't have one cached locally, OR
+         *  - the backend timestamp is newer,
+         *
+         * fetch the current manifest.
+         */
+        const cachedUserManifest =
+            localStorage.getItem("userManifest");
 
-    // 4. Fetch the required manifests concurrently
-    const [rawUserData, rawGuestData] = await Promise.all([userFetchPromise, guestFetchPromise]);
+        if (
+            !cachedUserManifest ||
+            !userManifest ||
+            serverUserTimestamp > localUserTimestamp
+        ) {
+            console.log(
+                "Fetching updated user manifest.",
+                {
+                    serverTimestamp: serverUserTimestamp,
+                    localTimestamp: localUserTimestamp
+                }
+            );
 
-    // 5. Process User Manifest
-    if (needsUserFetch) {
-        localStorage.setItem("userManifestTimestamp", String(member_manifestTimestamp));
-        userManifest = rawUserData ? rawUserData.manifest : [];
-        localStorage.setItem("userManifest", JSON.stringify(userManifest));
-    } else if (!userManifest && cachedUserManifest) {
-        userManifest = JSON.parse(cachedUserManifest);
+            const rawUserData =
+                await FirebaseUtils.getDocument("/manifest/userManifest");
+
+            userManifest =
+                Array.isArray(rawUserData?.manifest)
+                    ? rawUserData.manifest
+                    : [];
+
+            localStorage.setItem(
+                "userManifest",
+                JSON.stringify(userManifest)
+            );
+
+            localStorage.setItem(
+                "userManifestTimestamp",
+                String(serverUserTimestamp)
+            );
+        } else {
+            // Use the cached manifest if the server says it is still current.
+            try {
+                userManifest = JSON.parse(cachedUserManifest);
+
+                if (!Array.isArray(userManifest)) {
+                    throw new Error("Cached user manifest is not an array.");
+                }
+            } catch (error) {
+                console.warn(
+                    "Cached user manifest was invalid. Refetching.",
+                    error
+                );
+
+                const rawUserData =
+                    await FirebaseUtils.getDocument("/manifest/userManifest");
+
+                userManifest =
+                    Array.isArray(rawUserData?.manifest)
+                        ? rawUserData.manifest
+                        : [];
+
+                localStorage.setItem(
+                    "userManifest",
+                    JSON.stringify(userManifest)
+                );
+
+                localStorage.setItem(
+                    "userManifestTimestamp",
+                    String(serverUserTimestamp)
+                );
+            }
+        }
+
+
+        /*
+         * Guest manifest
+         */
+        const cachedGuestManifest =
+            localStorage.getItem("guestManifest");
+
+        if (
+            !cachedGuestManifest ||
+            !guestManifest ||
+            serverGuestTimestamp > localGuestTimestamp
+        ) {
+            console.log(
+                "Fetching updated guest manifest.",
+                {
+                    serverTimestamp: serverGuestTimestamp,
+                    localTimestamp: localGuestTimestamp
+                }
+            );
+
+            const rawGuestData =
+                await FirebaseUtils.getDocument("/manifest/guestManifest");
+
+            guestManifest =
+                Array.isArray(rawGuestData?.manifest)
+                    ? rawGuestData.manifest
+                    : [];
+
+            localStorage.setItem(
+                "guestManifest",
+                JSON.stringify(guestManifest)
+            );
+
+            localStorage.setItem(
+                "guestManifestTimestamp",
+                String(serverGuestTimestamp)
+            );
+        } else {
+            try {
+                guestManifest = JSON.parse(cachedGuestManifest);
+
+                if (!Array.isArray(guestManifest)) {
+                    throw new Error("Cached guest manifest is not an array.");
+                }
+            } catch (error) {
+                console.warn(
+                    "Cached guest manifest was invalid. Refetching.",
+                    error
+                );
+
+                const rawGuestData =
+                    await FirebaseUtils.getDocument("/manifest/guestManifest");
+
+                guestManifest =
+                    Array.isArray(rawGuestData?.manifest)
+                        ? rawGuestData.manifest
+                        : [];
+
+                localStorage.setItem(
+                    "guestManifest",
+                    JSON.stringify(guestManifest)
+                );
+
+                localStorage.setItem(
+                    "guestManifestTimestamp",
+                    String(serverGuestTimestamp)
+                );
+            }
+        }
+
+        console.log("userManifest", userManifest);
+        console.log("guestManifest", guestManifest);
+
+    } catch (error) {
+        console.error("Could not load user manifests:", error);
+        throw error;
     }
-    console.log("userManifest", userManifest);
-
-    // 6. Process Guest Manifest
-    if (needsGuestFetch) {
-        localStorage.setItem("guestManifestTimestamp", String(guest_manifestTimestamp));
-        guestManifest = rawGuestData ? rawGuestData.manifest : [];
-        localStorage.setItem("guestManifest", JSON.stringify(guestManifest));
-    } else if (!guestManifest && cachedGuestManifest) {
-        guestManifest = JSON.parse(cachedGuestManifest);
-    }
-    console.log("guestManifest", guestManifest);
 }
 
 const toggleButton = document.getElementById("toggle-btn")
