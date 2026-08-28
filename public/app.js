@@ -564,14 +564,15 @@ async function searchCampaignAdminUsers() {
     });
 }
 
-
 function setupCampaignAdmin(campaign) {
     const adminUI = document.getElementById(
         "campaignAdminUI"
     );
 
     if (!adminUI) {
-        console.error("campaignAdminUI was not found.");
+        console.error(
+            "campaignAdminUI was not found in the document."
+        );
         return;
     }
 
@@ -609,6 +610,20 @@ function setupCampaignAdmin(campaign) {
     const status = document.getElementById(
         "campaignAdmin-status"
     );
+
+    if (
+        !iconInput ||
+        !previewButton ||
+        !saveIconButton ||
+        !searchButton ||
+        !searchInput ||
+        !status
+    ) {
+        console.error(
+            "Campaign admin UI is missing one or more required elements."
+        );
+        return;
+    }
 
     const existingIcon =
         campaign.icon || "ra-dragon";
@@ -658,7 +673,7 @@ function setupCampaignAdmin(campaign) {
                 campaign
             );
 
-            // Update the icon shown in the My Pack sidebar.
+            // Update the icon shown in My Pack.
             const sidebarButton = document.querySelector(
                 `.nav-btn[data-id="${CSS.escape(activeCampaignAdminId)}"]`
             );
@@ -686,10 +701,15 @@ function setupCampaignAdmin(campaign) {
                 "Could not update the campaign icon.";
 
             updateCampaignAdminIconPreview();
+
+        } finally {
+            saveIconButton.disabled =
+                !validateCampaignIcon(iconInput.value.trim());
         }
     };
 
-    searchButton.onclick = searchCampaignAdminUsers;
+    searchButton.onclick =
+        searchCampaignAdminUsers;
 
     searchInput.onkeydown = (event) => {
         if (event.key === "Enter") {
@@ -928,23 +948,25 @@ async function loadSidebar(data) {
             await renderChat(data.id, false);
             break;
 
-        case "campaign":
-            campaignUI.hidden = false;
-            mainContentArea.appendChild(campaignUI);
-            mainContentArea = campaignUI;
+case "campaign":
+    campaignUI.hidden = false;
+    mainContentArea.appendChild(campaignUI);
+    mainContentArea = campaignUI;
 
-            activeFeature = data.id;
+    activeFeature = data.id;
 
-            // renderChat() clears campaignUI while rendering the messages,
-            // so the admin panel must be added AFTER renderChat().
-            await renderChat(data.id, false);
+    await renderChat(data.id, false);
 
-            setupCampaignAdmin(data);
-            campaignUI.appendChild(
-                document.getElementById("campaignAdminUI")
-            );
+    const campaignAdminUI = document.getElementById(
+        "campaignAdminUI"
+    );
 
-            break;
+    if (campaignAdminUI) {
+        campaignUI.appendChild(campaignAdminUI);
+        setupCampaignAdmin(data);
+    }
+
+    break;
 
         case "conversation":
             activeFeature = "conversation";
