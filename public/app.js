@@ -947,7 +947,6 @@ async function loadSidebar(data) {
             activeFeature = data.id;
             await renderChat(data.id, false);
             break;
-
 case "campaign":
     campaignUI.hidden = false;
     mainContentArea.appendChild(campaignUI);
@@ -957,17 +956,9 @@ case "campaign":
 
     await renderChat(data.id, false);
 
-    const campaignAdminUI = document.getElementById(
-        "campaignAdminUI"
-    );
-
-    if (campaignAdminUI) {
-        campaignUI.appendChild(campaignAdminUI);
-        setupCampaignAdmin(data);
-    }
+    setupCampaignAdmin(data);
 
     break;
-
         case "conversation":
             activeFeature = "conversation";
 
