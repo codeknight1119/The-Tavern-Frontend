@@ -302,7 +302,7 @@ async function getMyFeatures() {
 
         if (user.campaigns) {
             user.campaigns.forEach(async (campaign) => {
-                const campaignInfo = await FirebaseUtils.getDocument(`/features/${campaign.id}`)
+                let campaignInfo = await FirebaseUtils.getDocument(`/features/${campaign.id}`)
                 campaignInfo.id = campaign.id
                 myFeatures.push(campaignInfo)
                 ss_CAMPAIGNS.set(campaign.id, campaignInfo)
