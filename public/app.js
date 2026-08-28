@@ -223,28 +223,54 @@ checkUser()
 /////////////////////////PAGE RENDERING///////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-
 function newFeatureButton(val) {
-    const template = document.getElementById("sidebarTemplate")
-    let fragment = template.content.cloneNode(true)
-    const a = fragment.querySelector('.nav-btn')
-    const text = fragment.querySelector('.sidebarText')
-    const icon = fragment.querySelector(".ra")
+    const template = document.getElementById("sidebarTemplate");
+    const fragment = template.content.cloneNode(true);
 
-    text.innerText = val.name
+    const a = fragment.querySelector(".nav-btn");
+    const text = fragment.querySelector(".sidebarText");
+    const icon = fragment.querySelector(".ra");
+
+    text.innerText = val.name || "Conversation";
+
     if (val.icon && val.icon.trim() !== "") {
-        icon.classList.add(val.icon.trim())
+        icon.classList.add(val.icon.trim());
     }
+
     if (val.tooltip) {
-        a.title = val.tooltip
+        a.title = val.tooltip;
     }
-    a.dataset.id = val.id
-    a.dataset.personalMessage = true
 
-    a.addEventListener("click", handleSidebarClick)
+    a.dataset.id = val.id;
+    a.dataset.personalMessage = "true";
 
+    a.addEventListener("click", handleSidebarClick);
 
-    return fragment
+    return fragment;
+}
+
+const conversationListeners = new Map();
+
+function listenToConversation(conversationId) {
+    // Don't create multiple listeners for the same conversation.
+    if (conversationListeners.has(conversationId)) {
+        return;
+    }
+
+    const unsubscribe = FirebaseUtils.listenForNewDocInCollection(
+        `/conversations/${conversationId}/messages`,
+        (data) => {
+            // Ignore messages from another chat.
+            if (conversationId !== activeChat) return;
+
+            // We already render our own message optimistically.
+            if (data.uid === user.uid) return;
+
+            renderMessage(data);
+        }
+    );
+
+    conversationListeners.set(conversationId, unsubscribe);
 }
 
 const friendFriendsBtn = document.getElementById("findFriends-btn")
@@ -285,18 +311,25 @@ async function getMyFeatures() {
                 myFeatures.push(campaign)
             })
         }
-        const myPersonalMessages = await FirebaseUtils.getDocuments("/conversations", 10, null, { field: "users", value: user.uid })
+       const myPersonalMessages = await FirebaseUtils.getDocuments(
+            "/conversations",
+            10,
+            null,
+            { field: "users", value: user.uid }
+        );
+
         myPersonalMessages.forEach((val) => {
-            const frag = newFeatureButton(val, () => {
-                renderChat(val.id, true)
-            })
-            friendFriendsBtn.after(frag)
-            myFeatures.push(val)
-            FirebaseUtils.listenForNewDocInCollection(`/conversations/${val.id}/messages`, (data) => {
-                if (data.uid === user.uid || val.id !== activeChat) return
-                renderMessage(data)
-            })
-        })
+            const frag = newFeatureButton(val);
+
+            friendFriendsBtn.after(frag);
+
+            // IMPORTANT:
+            // Conversations must be searchable through getFeatureById().
+            myFeatures.push(val);
+
+            // Start the real-time listener.
+            listenToConversation(val.id);
+        });
     }
 }
 const findFriends_popup = document.getElementById("findFriends-popup")
@@ -374,84 +407,175 @@ async function search() {
 document.getElementById("findFriends-searchBtn").addEventListener("click", search);
 findFriends_keyDropdown.addEventListener("change", search);
 
-document.getElementById("findFriends-createConv").addEventListener("click", async () => {
-    let chatIds = []
-    let chatNames = []
-    Array.from(document.getElementById("findFriends-selectedFriends").children).forEach((val) => {
-        chatIds.push(val.dataset.id)
-        chatNames.push(val.innerText)
-    })
-    chatIds.push(user.uid)
-    let convObj = {
-        name: document.getElementById("findFriends-convName").value,
-        users: chatIds,
-        type: "conversation",
-        tooltip: `Conversation with ${chatNames.join(", ")}.`
+document.getElementById("findFriends-createConv").addEventListener(
+    "click",
+    async () => {
+
+        const chatIds = [];
+        const chatNames = [];
+
+        Array.from(
+            document.getElementById("findFriends-selectedFriends").children
+        ).forEach((val) => {
+            chatIds.push(val.dataset.id);
+            chatNames.push(val.innerText);
+        });
+
+        // Always include yourself.
+        chatIds.push(user.uid);
+
+        // Prevent creating a conversation with nobody else.
+        if (chatIds.length < 2) {
+            alert("Select at least one person to start a conversation.");
+            return;
+        }
+
+        const convObj = {
+            name:
+                document.getElementById("findFriends-convName").value.trim()
+                || "Private Conversation",
+
+            users: chatIds,
+
+            type: "conversation",
+
+            tooltip:
+                `Conversation with ${chatNames.join(", ")}.`
+        };
+
+        try {
+            const convData = await FirebaseUtils.addDocument(
+                "/conversations",
+                convObj
+            );
+
+            // The returned object needs its Firebase document ID.
+            const conversation = {
+                ...convData,
+                id: convData.id,
+                type: "conversation"
+            };
+
+            // VERY IMPORTANT:
+            // handleSidebarClick() searches myFeatures.
+            myFeatures.push(conversation);
+
+            // Put it in the sidebar.
+            const frag = newFeatureButton(conversation);
+            friendFriendsBtn.after(frag);
+
+            // Start listening for messages immediately.
+            listenToConversation(conversation.id);
+
+            // Open the conversation immediately.
+            activeChat = conversation.id;
+            activeFeature = "conversation";
+
+            // Close the popup.
+            findFriends_popup.style.display = "none";
+
+            // Clear the creation UI.
+            document.getElementById("findFriends-convName").value = "";
+            document
+                .getElementById("findFriends-selectedFriends")
+                .replaceChildren();
+
+            // Render the new chat.
+            await renderChat(conversation.id, true);
+
+        } catch (error) {
+            console.error("Failed to create conversation:", error);
+            alert("Could not create the conversation.");
+        }
     }
-    const convData = await FirebaseUtils.addDocument("/conversations", convObj)
-
-
-    const frag = newFeatureButton(convData)
-
-    friendFriendsBtn.after(frag)
-
-})
+);
 
 
 
 function handleSidebarClick(event) {
-    event.preventDefault()
-    const targetAnchor = event.target.closest('.nav-btn')
-    if (!targetAnchor) return
-    const clickedLi = targetAnchor.parentElement
-    if (clickedLi === currentSelectedSidebar) return
 
-    const idVal = targetAnchor.dataset.id
-    const pageData = getFeatureById(idVal)
+    event.preventDefault();
 
-    if (!pageData) return
+    const targetAnchor =
+        event.target.closest(".nav-btn");
 
-    // Cleaned up class toggling
-    if (currentSelectedSidebar) {
-        currentSelectedSidebar.classList.remove("active")
+    if (!targetAnchor) return;
+
+    const clickedLi =
+        targetAnchor.parentElement;
+
+    if (clickedLi === currentSelectedSidebar) {
+        return;
     }
 
-    clickedLi.classList.add("active")
-    currentSelectedSidebar = clickedLi
+    const idVal =
+        targetAnchor.dataset.id;
+
+    const pageData =
+        getFeatureById(idVal);
+
+    if (!pageData) {
+        console.error(
+            "Could not find sidebar item in myFeatures:",
+            idVal
+        );
+        return;
+    }
+
+    if (currentSelectedSidebar) {
+        currentSelectedSidebar.classList.remove("active");
+    }
+
+    clickedLi.classList.add("active");
+    currentSelectedSidebar = clickedLi;
 
     mainContentArea.replaceChildren();
-    loadSidebar(pageData)
+
+    loadSidebar(pageData);
 }
 
 const campaignUI = document.getElementById("campaignUI")
 function hideFeatureHTML() {
     Array.from(document.getElementsByClassName("featureHTML")).forEach((val) => { val.hidden = true })
 }
-
 async function loadSidebar(data) {
-    hideFeatureHTML()
+    hideFeatureHTML();
+
     activeFeatureType = data.type;
-    mainContentArea = document.getElementById("mainContentArea")
-    mainContentArea.innerHTML = ""
+
+    mainContentArea = document.getElementById("mainContentArea");
+    mainContentArea.innerHTML = "";
+
     switch (data.type) {
+
         case "tool":
             activeFeature = data.id;
-            renderTool(data.id)
+            await renderTool(data.id);
             break;
 
         case "chat":
-            await renderChat(data.id)
+            activeFeature = data.id;
+            await renderChat(data.id, false);
             break;
+
         case "campaign":
             campaignUI.hidden = false;
-            mainContentArea.appendChild(campaignUI)
-            mainContentArea = campaignUI
-            renderChat(data.id)
-            break
+            mainContentArea.appendChild(campaignUI);
+            mainContentArea = campaignUI;
+
+            activeFeature = data.id;
+            await renderChat(data.id, false);
+            break;
+
         case "conversation":
-            activeChat = data.id
-            await renderChat(data.id, true)
-            break
+            activeFeature = "conversation";
+
+            await renderChat(data.id, true);
+            break;
+
+        default:
+            console.warn("Unknown feature type:", data.type);
+            break;
     }
 }
 
@@ -658,118 +782,197 @@ async function renderTool(id) {
 
 
 
-async function renderChat(id, conversation = false) {
-    chatUI.hidden = false;
-    activeChat = id;
-    const dir = conversation ? "conversations" : "features"
-    if (conversation) {
-        activeFeature = "conversation"
-    }
-   const messages = await FirebaseUtils.getDocuments(
-    `/${dir}/${id}/messages`, 
-    50, 
-    { field: 'timestamp', direction: 'asc' }
-);
-    activeChat = id
+let chatRenderGeneration = 0;
 
-    if (messages.length === 0) {
-        mainContentArea.innerHTML = `<h3>No Messages</h3>`
-        return
+async function renderChat(id, conversation = false) {
+
+    const renderId = ++chatRenderGeneration;
+
+    chatUI.hidden = false;
+
+    // Set these BEFORE doing the async Firebase request.
+    activeChat = id;
+
+    if (conversation) {
+        activeFeature = "conversation";
+        activeFeatureType = "conversation";
+
+        // Make sure the realtime listener exists.
+        listenToConversation(id);
+    } else {
+        activeFeature = id;
     }
-    messages.forEach((val) => {
-        renderMessage(val)
+
+    // Clear the old chat immediately.
+    mainContentArea.replaceChildren();
+
+    const dir = conversation
+        ? "conversations"
+        : "features";
+
+    let messages;
+
+    try {
+        messages = await FirebaseUtils.getDocuments(
+            `/${dir}/${id}/messages`,
+            50,
+            { field: "timestamp", direction: "asc" }
+        );
+    } catch (error) {
+        console.error("Failed to load chat:", error);
+
+        // Only show the error if we're still looking at this chat.
+        if (activeChat === id) {
+            mainContentArea.innerHTML =
+                "<p>Could not load this conversation.</p>";
+        }
+
+        return;
+    }
+
+    // A different chat was selected while Firebase was loading.
+    // Do NOT allow the old request to overwrite the new chat.
+    if (
+        renderId !== chatRenderGeneration ||
+        activeChat !== id
+    ) {
+        return;
+    }
+
+    // Clear once more in case something rendered while loading.
+    mainContentArea.replaceChildren();
+
+    if (!messages || messages.length === 0) {
+        mainContentArea.innerHTML = "<h3>No Messages</h3>";
+        return;
+    }
+
+    messages.forEach((message) => {
+        renderMessage(message);
     });
 }
 
-window.addEventListener("chatSendState", (event) => {
-    const { chatId, messageSent } = event.detail;
-
-    // Ignore events belonging to another chat
-    if (chatId !== activeChat) return;
-
-    if(messageSent){
-
-    }
-});
-
-window.addEventListener("chatSendState", (event) => {
-    const { chatId, locked } = event.detail;
-
-    // This event belongs to a different chat.
-    if (chatId !== activeChat) return;
-
-    const sendBtn = document.getElementById("sendBtn");
-    const sendBar = document.getElementById("sendBar");
-
-    sendBtn.disabled = locked;
-    sendBar.classList.toggle("chat-send-locked", locked);
-
-    // TipTap's editor needs to be explicitly disabled too.
-    if (locked) {
-        messageInput.setEditable(false);
-    } else {
-        messageInput.setEditable(true);
-    }
-});
 
 function renderMessage(data) {
-    const isMine = (user && data.uid === user.uid) ? "mine" : "notMine";
 
-    const displayName = data.username || data.name;
-    const parsedContent = marked.parse(data.content);
+    // Don't render messages if we don't currently have a chat.
+    if (!activeChat) return;
+
+    const isMine =
+        user && data.uid === user.uid
+            ? "mine"
+            : "notMine";
+
+    const displayName =
+        data.username ||
+        data.name ||
+        "Unknown User";
+
+    const parsedContent =
+        marked.parse(data.content || "");
+
     const htmlText = `
         <div class="message ${isMine}">
-            <strong><p>${displayName}:</p></strong>
+            <strong>
+                <p>${displayName}:</p>
+            </strong>
+
             <div>${parsedContent}</div>
         </div>
-        `;
-    const messageEl = document.createElement("div")
-    if (!ss_CHATS.get(currentSelectedSidebar)) {
-        mainContentArea.innerHTML = ""
-        ss_CHATS.set(currentSelectedSidebar, [data])
-    } else {
-        ss_CHATS.get(currentSelectedSidebar).push(data)
+    `;
+
+    // Cache by CHAT ID, not sidebar DOM element.
+    if (!ss_CHATS.has(activeChat)) {
+        ss_CHATS.set(activeChat, []);
     }
-    messageEl.innerHTML = htmlText
-    mainContentArea.insertAdjacentHTML('beforeend', htmlText);
+
+    ss_CHATS.get(activeChat).push(data);
+
+    mainContentArea.insertAdjacentHTML(
+        "beforeend",
+        htmlText
+    );
 }
 
 async function handleChatMesage() {
-    if (activeChat === null) return
 
-    const markdownContent = messageInput.getMarkdown();
-    if (markdownContent.trim() === "") return
+    if (!activeChat) return;
 
-    const messageTxt = markdownContent ?? messageInput.getText()
-    setChatSendLocked(activeChat, true);
+    const chatId = activeChat;
 
-    const cleared = await fetchServer("checkMessage", { message: messageTxt, conv:activeChat })
+    const markdownContent =
+        messageInput.getMarkdown();
 
-    if (!cleared.clean) {
-        alert("Inapropiate content found in message. \nPlease try again with appropiate lanuage.")
-        return
+    if (!markdownContent || markdownContent.trim() === "") {
+        return;
     }
 
+    const messageTxt = markdownContent;
 
-    const sendData = {
-        content: messageTxt,
-        username: user.name,
-        uid: user.uid,
-        timestamp: Date.now()
-    }
+    setChatSendLocked(chatId, true);
 
-    messageInput.commands.clearContent();
-    if (!ss_CHATS.get(activeChat)) {
-        ss_CHATS.set(activeChat, [sendData])
-    } else {
-        ss_CHATS.get(activeChat).push(sendData)
-    }
-    renderMessage(sendData)
-    const dir = activeFeature === "conversation" ? "conversations" : "features"
-    await FirebaseUtils.addDocument(`${dir}/${activeChat}/messages`, sendData)
+    try {
 
+        const cleared = await fetchServer(
+            "checkMessage",
+            {
+                message: messageTxt,
+                conv: chatId
+            }
+        );
+
+        if (!cleared.clean) {
+            alert(
+                "Inappropriate content found in message.\n" +
+                "Please try again with appropriate language."
+            );
+
+            return;
+        }
+
+        const sendData = {
+            content: messageTxt,
+            username: user.name,
+            uid: user.uid,
+            timestamp: Date.now()
+        };
+
+        // Clear input only after moderation succeeds.
+        messageInput.commands.clearContent();
+
+if (activeChat !== chatId) {
+    console.warn(
+        "Chat changed while sending message. " +
+        "Not rendering optimistic message."
+    );
+} else {
+    renderMessage(sendData);
 }
 
+const dir =
+    activeFeature === "conversation"
+        ? "conversations"
+        : "features";
+
+await FirebaseUtils.addDocument(
+    `${dir}/${chatId}/messages`,
+    sendData
+);
+
+    } catch (error) {
+
+        console.error("Failed to send message:", error);
+
+        alert(
+            "The message could not be sent. Please try again."
+        );
+
+    } finally {
+
+        // ALWAYS unlock this particular chat.
+        setChatSendLocked(chatId, false);
+    }
+}
 document.getElementById("sendBtn").addEventListener("click", handleChatMesage)
 
 
