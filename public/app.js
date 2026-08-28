@@ -301,16 +301,43 @@ async function getMyFeatures() {
         }
 
         if (user.campaigns) {
-            user.campaigns.forEach(async (campaign) => {
-                let campaignInfo = await FirebaseUtils.getDocument(`/features/${campaign.id}`)
-                campaignInfo.id = campaign.id
-                myFeatures.push(campaignInfo)
-                ss_CAMPAIGNS.set(campaign.id, campaignInfo)
-                const fragment = newFeatureButton(campaignInfo)
-                document.getElementById("personal-menu").prepend(fragment)
-                myFeatures.push(campaign)
-            })
+    user.campaigns.forEach(async (campaign) => {
+        try {
+            // Campaigns now live under /campaigns, not /features.
+            const campaignInfo = await FirebaseUtils.getDocument(
+                `/campaigns/${campaign.id}`
+            );
+
+            if (!campaignInfo) {
+                console.error(
+                    `Could not load campaign ${campaign.id} from /campaigns`
+                );
+                return;
+            }
+
+            campaignInfo.id = campaign.id;
+
+            // Preserve the user's membership information alongside
+            // the campaign document.
+            campaignInfo.DM = campaign.DM === true;
+            campaignInfo.type = "campaign";
+
+            myFeatures.push(campaignInfo);
+            ss_CAMPAIGNS.set(campaign.id, campaignInfo);
+
+            const fragment = newFeatureButton(campaignInfo);
+            document
+                .getElementById("personal-menu")
+                .prepend(fragment);
+
+        } catch (error) {
+            console.error(
+                `Failed to load campaign ${campaign.id}:`,
+                error
+            );
         }
+    });
+}
             const myPersonalMessages = await FirebaseUtils.getDocuments(
                 "/conversations",
                 100,
@@ -336,6 +363,344 @@ async function getMyFeatures() {
         });
     }
 }
+
+function validateCampaignIcon(icon) {
+    icon = icon.trim();
+
+    if (!/^ra-[a-z0-9-]+$/.test(icon)) {
+        return false;
+    }
+
+    // ra-2x, ra-3x, etc. are size modifiers, not icons.
+    if (/^ra-\d+x$/.test(icon)) {
+        return false;
+    }
+
+    const testIcon = document.createElement("i");
+    testIcon.className = `ra ${icon}`;
+
+    testIcon.style.position = "absolute";
+    testIcon.style.visibility = "hidden";
+    testIcon.style.pointerEvents = "none";
+
+    document.body.appendChild(testIcon);
+
+    let content = "";
+
+    try {
+        content = getComputedStyle(
+            testIcon,
+            "::before"
+        ).content;
+    } catch (error) {
+        console.error("Could not validate RPG Awesome icon:", error);
+    }
+
+    testIcon.remove();
+
+    return (
+        content &&
+        content !== "none" &&
+        content !== "normal" &&
+        content !== '""'
+    );
+}
+
+
+function updateCampaignAdminIconPreview() {
+    const input = document.getElementById(
+        "campaignAdmin-iconInput"
+    );
+
+    const preview = document.getElementById(
+        "campaignAdmin-iconPreview"
+    );
+
+    const status = document.getElementById(
+        "campaignAdmin-iconStatus"
+    );
+
+    const saveButton = document.getElementById(
+        "campaignAdmin-saveIcon"
+    );
+
+    const icon = input.value.trim();
+
+    preview.className = "ra ra-2x";
+    preview.style.color = "var(--accent-clr)";
+
+    if (!icon) {
+        status.textContent = "Enter an icon name.";
+        saveButton.disabled = true;
+        return false;
+    }
+
+    if (!validateCampaignIcon(icon)) {
+        status.textContent =
+            "That is not a valid RPG Awesome icon.";
+
+        saveButton.disabled = true;
+        return false;
+    }
+
+    preview.classList.add(icon);
+
+    status.textContent = "Valid RPG Awesome icon.";
+    saveButton.disabled = false;
+
+    return true;
+}
+
+
+async function searchCampaignAdminUsers() {
+    const input = document.getElementById(
+        "campaignAdmin-search"
+    );
+
+    const searchBy = document.getElementById(
+        "campaignAdmin-searchBy"
+    );
+
+    const output = document.getElementById(
+        "campaignAdmin-foundUsers"
+    );
+
+    const searchTerm = input.value.trim().toLowerCase();
+
+    output.replaceChildren();
+
+    if (!searchTerm) {
+        return;
+    }
+
+    await checkUserManifest();
+
+    const key = searchBy.value || "name";
+
+    const results = userManifest.filter((item) => {
+        if (!item || item.id === user.uid) {
+            return false;
+        }
+
+        const value = String(
+            item[key] || ""
+        ).toLowerCase();
+
+        return value.includes(searchTerm);
+    });
+
+    if (results.length === 0) {
+        const notFound = document.createElement("p");
+        notFound.textContent =
+            `Could not find "${searchTerm}"`;
+
+        output.appendChild(notFound);
+        return;
+    }
+
+    results.forEach((result) => {
+        const row = document.createElement("div");
+
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.gap = "8px";
+        row.style.marginBottom = "8px";
+
+        const name = document.createElement("span");
+
+        name.textContent =
+            `${result.name || ""} (${result["Real Name"] || ""})`;
+
+        const addButton = document.createElement("button");
+
+        addButton.textContent = "Add to Campaign";
+
+        addButton.addEventListener("click", async () => {
+            if (!activeCampaignAdminId) {
+                return;
+            }
+
+            addButton.disabled = true;
+
+            try {
+                const response = await fetchServer(
+                    "campaignAdmin",
+                    {
+                        action: "addUser",
+                        campaignId: activeCampaignAdminId,
+                        userId: result.id
+                    }
+                );
+
+                const status = document.getElementById(
+                    "campaignAdmin-status"
+                );
+
+                if (response.alreadyAdded) {
+                    status.textContent =
+                        `${result.name} already has access to this campaign.`;
+                } else {
+                    status.textContent =
+                        `${result.name} was added to the campaign.`;
+                }
+
+            } catch (error) {
+                console.error(
+                    "Failed to add campaign user:",
+                    error
+                );
+
+                document.getElementById(
+                    "campaignAdmin-status"
+                ).textContent =
+                    "Could not add that user.";
+            } finally {
+                addButton.disabled = false;
+            }
+        });
+
+        row.append(name, addButton);
+        output.appendChild(row);
+    });
+}
+
+
+function setupCampaignAdmin(campaign) {
+    const adminUI = document.getElementById(
+        "campaignAdminUI"
+    );
+
+    if (!adminUI) {
+        console.error("campaignAdminUI was not found.");
+        return;
+    }
+
+    activeCampaignAdminId = null;
+    adminUI.hidden = true;
+
+    // Only a campaign membership explicitly marked DM gets
+    // campaign administration controls.
+    if (!campaign || campaign.DM !== true) {
+        return;
+    }
+
+    activeCampaignAdminId = campaign.id;
+
+    const iconInput = document.getElementById(
+        "campaignAdmin-iconInput"
+    );
+
+    const previewButton = document.getElementById(
+        "campaignAdmin-previewIcon"
+    );
+
+    const saveIconButton = document.getElementById(
+        "campaignAdmin-saveIcon"
+    );
+
+    const searchButton = document.getElementById(
+        "campaignAdmin-searchBtn"
+    );
+
+    const searchInput = document.getElementById(
+        "campaignAdmin-search"
+    );
+
+    const status = document.getElementById(
+        "campaignAdmin-status"
+    );
+
+    const existingIcon =
+        campaign.icon || "ra-dragon";
+
+    iconInput.value = existingIcon;
+
+    status.textContent = "";
+
+    updateCampaignAdminIconPreview();
+
+    previewButton.onclick = () => {
+        updateCampaignAdminIconPreview();
+    };
+
+    iconInput.oninput = () => {
+        updateCampaignAdminIconPreview();
+    };
+
+    saveIconButton.onclick = async () => {
+        if (!activeCampaignAdminId) {
+            return;
+        }
+
+        if (!updateCampaignAdminIconPreview()) {
+            return;
+        }
+
+        const icon = iconInput.value.trim();
+
+        saveIconButton.disabled = true;
+        status.textContent = "Saving campaign icon...";
+
+        try {
+            const response = await fetchServer(
+                "campaignAdmin",
+                {
+                    action: "updateIcon",
+                    campaignId: activeCampaignAdminId,
+                    icon
+                }
+            );
+
+            campaign.icon = response.icon;
+
+            ss_CAMPAIGNS.set(
+                activeCampaignAdminId,
+                campaign
+            );
+
+            // Update the icon shown in the My Pack sidebar.
+            const sidebarButton = document.querySelector(
+                `.nav-btn[data-id="${CSS.escape(activeCampaignAdminId)}"]`
+            );
+
+            if (sidebarButton) {
+                const sidebarIcon =
+                    sidebarButton.querySelector("i");
+
+                if (sidebarIcon) {
+                    sidebarIcon.className =
+                        `ra ra-2x ${response.icon}`;
+                }
+            }
+
+            status.textContent =
+                "Campaign icon updated.";
+
+        } catch (error) {
+            console.error(
+                "Failed to update campaign icon:",
+                error
+            );
+
+            status.textContent =
+                "Could not update the campaign icon.";
+
+            updateCampaignAdminIconPreview();
+        }
+    };
+
+    searchButton.onclick = searchCampaignAdminUsers;
+
+    searchInput.onkeydown = (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchCampaignAdminUsers();
+        }
+    };
+
+    adminUI.hidden = false;
+}
+
 const findFriends_popup = document.getElementById("findFriends-popup")
 friendFriendsBtn.addEventListener("click", () => {
     findFriends_popup.style.display = "flex";
@@ -569,7 +934,16 @@ async function loadSidebar(data) {
             mainContentArea = campaignUI;
 
             activeFeature = data.id;
+
+            // renderChat() clears campaignUI while rendering the messages,
+            // so the admin panel must be added AFTER renderChat().
             await renderChat(data.id, false);
+
+            setupCampaignAdmin(data);
+            campaignUI.appendChild(
+                document.getElementById("campaignAdminUI")
+            );
+
             break;
 
         case "conversation":
