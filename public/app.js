@@ -735,19 +735,19 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
         switch (searchUserDropdown.value) {
 
             case "searchName": {
-
-                const searchTerm = searchTermInput.value?.trim();
+                const searchTerm = searchTermInput.value?.trim().toLowerCase();
 
                 if (!searchTerm) {
                     alert("No search term provided.");
                     return;
                 }
 
-                docs = await FirebaseUtils.getDocumentFieldIncludes(
-                    "/users",
-                    "Real Name",
-                    searchTerm
-                );
+                await checkUserManifest();
+
+                docs = userManifest.filter(entry => {
+                    const realName = String(entry["Real Name"] || "").toLowerCase();
+                    return realName.includes(searchTerm);
+                });
 
                 break;
             }
