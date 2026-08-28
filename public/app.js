@@ -23,6 +23,7 @@ let activeFeature = null;
 let activeFeatureType = null;
 let userManifest = null;
 let guestManifest = null;
+let activeCampaignAdminId = null;
 
 
 
