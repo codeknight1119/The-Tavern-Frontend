@@ -311,12 +311,16 @@ async function getMyFeatures() {
                 myFeatures.push(campaign)
             })
         }
-       const myPersonalMessages = await FirebaseUtils.getDocuments(
-            "/conversations",
-            10,
-            null,
-            { field: "users", value: user.uid }
-        );
+            const myPersonalMessages = await FirebaseUtils.getDocuments(
+                "/conversations",
+                100,
+                null,
+                {
+                    field: "users",
+                    value: user.uid,
+                    operator: "array-contains"
+                }
+            );
 
         myPersonalMessages.forEach((val) => {
             const frag = newFeatureButton(val);
@@ -453,7 +457,8 @@ document.getElementById("findFriends-createConv").addEventListener(
             const conversation = {
                 ...convData,
                 id: convData.id,
-                type: "conversation"
+                type: "conversation",
+                name: convObj.name
             };
 
             // VERY IMPORTANT:
