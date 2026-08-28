@@ -741,7 +741,7 @@ async function handleChatMesage() {
     if (markdownContent.trim() === "") return
 
     const messageTxt = markdownContent ?? messageInput.getText()
-    setChatSendLocked(chatId, true);
+    setChatSendLocked(activeChat, true);
 
     const cleared = await fetchServer("checkMessage", { message: messageTxt, conv:activeChat })
 
