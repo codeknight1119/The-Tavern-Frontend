@@ -46,6 +46,31 @@ const messageInput = new Editor({
     },
 })
 
+function setChatSendLocked(chatId, locked) {
+    // Only modify the currently displayed chat.
+    if (chatId !== activeChat) return;
+
+    const sendBtn = document.getElementById("sendBtn");
+    const sendBar = document.getElementById("sendBar");
+
+    // Lock/unlock the actual TipTap editor.
+    messageInput.setEditable(!locked);
+
+    // Lock/unlock the send button.
+    sendBtn.disabled = locked;
+
+    // Add/remove the visual overlay.
+    sendBar.classList.toggle("chat-send-locked", locked);
+
+    // Tell anything else listening that this chat changed state.
+    window.dispatchEvent(new CustomEvent("chatSendState", {
+        detail: {
+            chatId,
+            locked
+        }
+    }));
+}
+
 //////////////////////////////////////////////////////////////////////
 /////////////////////////SITE UTILS///////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -631,6 +656,8 @@ async function renderTool(id) {
     }
 }
 
+
+
 async function renderChat(id, conversation = false) {
     chatUI.hidden = false;
     activeChat = id;
@@ -638,7 +665,11 @@ async function renderChat(id, conversation = false) {
     if (conversation) {
         activeFeature = "conversation"
     }
-    const messages = await FirebaseUtils.getDocuments(`/${dir}/${id}/messages`, 50)
+   const messages = await FirebaseUtils.getDocuments(
+    `/${dir}/${id}/messages`, 
+    50, 
+    { field: 'timestamp', direction: 'asc' }
+);
     activeChat = id
 
     if (messages.length === 0) {
@@ -649,6 +680,37 @@ async function renderChat(id, conversation = false) {
         renderMessage(val)
     });
 }
+
+window.addEventListener("chatSendState", (event) => {
+    const { chatId, messageSent } = event.detail;
+
+    // Ignore events belonging to another chat
+    if (chatId !== activeChat) return;
+
+    if(messageSent){
+
+    }
+});
+
+window.addEventListener("chatSendState", (event) => {
+    const { chatId, locked } = event.detail;
+
+    // This event belongs to a different chat.
+    if (chatId !== activeChat) return;
+
+    const sendBtn = document.getElementById("sendBtn");
+    const sendBar = document.getElementById("sendBar");
+
+    sendBtn.disabled = locked;
+    sendBar.classList.toggle("chat-send-locked", locked);
+
+    // TipTap's editor needs to be explicitly disabled too.
+    if (locked) {
+        messageInput.setEditable(false);
+    } else {
+        messageInput.setEditable(true);
+    }
+});
 
 function renderMessage(data) {
     const isMine = (user && data.uid === user.uid) ? "mine" : "notMine";
@@ -679,8 +741,9 @@ async function handleChatMesage() {
     if (markdownContent.trim() === "") return
 
     const messageTxt = markdownContent ?? messageInput.getText()
+    setChatSendLocked(chatId, true);
 
-    const cleared = await fetchServer("checkMessage", { message: messageTxt })
+    const cleared = await fetchServer("checkMessage", { message: messageTxt, conv:activeChat })
 
     if (!cleared.clean) {
         alert("Inapropiate content found in message. \nPlease try again with appropiate lanuage.")
@@ -1375,6 +1438,8 @@ async function fetchServer(endpoint, postData) {
     if (!response.ok) {
         throw new Error(`Backend request failed (${response.status}).`);
     }
-
+    if(endpoint === "checkMessage"){
+        setChatSendLocked(postData.conv, false);
+    }
     return await response.json();
 }
