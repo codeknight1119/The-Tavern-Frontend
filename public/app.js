@@ -1415,6 +1415,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
             case "notAllowed": {
 
                 console.log("Requesting not allowed users...");
+                document.getElementById("helpTextUserPerms").innerText = "Loading..."
 
                 // IMPORTANT:
                 // Passing {} makes fetchServer use POST.
