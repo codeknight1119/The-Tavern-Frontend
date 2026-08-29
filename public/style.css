@@ -538,9 +538,12 @@ dropdown-btn i {
 #sidebar .nav-btn .sidebarText {
     flex: 1 1 auto;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+
+    line-height: 1.2;
 }
 
 
@@ -807,3 +810,11 @@ dropdown-btn i {
     }
 }
 
+
+#campaignAdminTitle {
+    margin: 0 0 0.25rem 0;
+    padding: 1rem;
+    /* margin-right: 100px; */
+    /* overflow-wrap: anywhere; */
+    line-height: 0.75;
+}
