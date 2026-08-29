@@ -648,6 +648,7 @@ async function renderChat(id, conversation = false) {
     messages.forEach((val) => {
         renderMessage(val)
     });
+    mainContentArea.scrollTop = mainContentArea.scrollHeight;
 }
 
 function renderMessage(data) {
