@@ -242,6 +242,14 @@ function newFeatureButton(val) {
         a.title = val.tooltip;
     }
 
+    if(val.DM){
+      const dmEdit = a.querySelector(".dmEditIcon")
+      dmEdit.hidden = false;
+      dmEdit.addEventListener("click", ()=>{
+        document.getElementById("campaignAdminUI").hidden = false;
+      })
+    }
+
     a.dataset.id = val.id;
     a.dataset.personalMessage = "true";
 
