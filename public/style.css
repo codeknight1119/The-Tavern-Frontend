@@ -53,7 +53,7 @@ main {
     align-self: start;
     transition: 300ms ease-in-out;
     overflow: hidden;
-    text-wrap: nowrap;
+   /* text-wrap: nowrap;*/
 }
 
 #sidebar.close {
@@ -483,8 +483,8 @@ dropdown-btn i {
      * disappearing off the right side of the screen.
      */
     white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+   /* overflow-wrap: anywhere;
+    word-break: break-word;*/
 
     /*
      * Shrink gracefully on smaller screens.
@@ -540,12 +540,11 @@ dropdown-btn i {
     min-width: 0;
 
     white-space: normal;
-    overflow-wrap: break-word;
     word-break: normal;
+    overflow-wrap: normal;
 
     line-height: 1.2;
 }
-
 
 /* =========================================================
    CAMPAIGN ADMIN OVERLAY
