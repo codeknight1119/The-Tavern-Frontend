@@ -454,7 +454,7 @@ dropdown-btn i {
     z-index: 10;
 }
 
-```css
+
 /* =========================================================
    CAMPAIGN HEADER
    ========================================================= */
@@ -536,9 +536,11 @@ dropdown-btn i {
  * doesn't get pushed off-screen.
  */
 #sidebar .nav-btn .sidebarText {
+    flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 
@@ -564,6 +566,9 @@ dropdown-btn i {
  * hidden must win over the display rule above.
  */
 #campaignAdminUI[hidden] {
+    display: none !important;
+}
+#sidebar .dmEditIcon[hidden] {
     display: none !important;
 }
 
@@ -801,4 +806,4 @@ dropdown-btn i {
         align-items: stretch;
     }
 }
-```
+
