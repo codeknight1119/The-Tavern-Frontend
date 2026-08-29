@@ -10,9 +10,10 @@
     <script type="module" src="./app.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght=400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
     <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
 </head>
 
 <body>
@@ -192,6 +193,44 @@
             </div>
         </div>
 
+        <div id="campaignAdminUI" hidden class="featureHTML">
+            <section style="border: 2px solid var(--accent-clr); border-radius: 6px; padding: 1em; margin: 1em 0;">
+                <h2>Campaign Administration</h2>
+                <p>Only you, as this campaign's DM, can use these controls.</p>
+
+                <div style="display:flex; flex-direction:column; gap:.5em; margin-top:1em;">
+                    <h3>Add a User</h3>
+                    <div class="findFriends-search-row">
+                        <label for="campaignAdmin-searchBy">Search by:</label>
+                        <select id="campaignAdmin-searchBy">
+                            <option value="name">User Name</option>
+                            <option value="Real Name" selected>Real Name</option>
+                        </select>
+                        <input id="campaignAdmin-search" type="text" placeholder="Type a name..." />
+                        <button id="campaignAdmin-searchBtn">Search</button>
+                    </div>
+                    <div id="campaignAdmin-foundUsers" style="max-height:180px; overflow-y:auto;"></div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:.5em; margin-top:1.5em;">
+                    <h3>Campaign Icon</h3>
+                    <p>
+                        Browse the available RPG Awesome icons here:
+                        <a href="https://nagoshiashumari.github.io/Rpg-Awesome/" target="_blank" rel="noopener noreferrer">RPG Awesome</a>
+                    </p>
+                    <div style="display:flex; align-items:center; gap:.75em; flex-wrap:wrap;">
+                        <input id="campaignAdmin-iconInput" type="text" placeholder="ra-dragon" autocomplete="off" />
+                        <button id="campaignAdmin-previewIcon">Preview</button>
+                        <i id="campaignAdmin-iconPreview" class="ra ra-2x" aria-label="Campaign icon preview"></i>
+                    </div>
+                    <p id="campaignAdmin-iconStatus" aria-live="polite"></p>
+                    <button id="campaignAdmin-saveIcon" disabled>Save Campaign Icon</button>
+                </div>
+
+                <p id="campaignAdmin-status" aria-live="polite" style="margin-top:1em;"></p>
+            </section>
+        </div>
+
         <template id="guestUITemplate">
             <div>
                 <h2 id="rollCall_waitText" hidden>Loading...</h2>
@@ -254,4 +293,5 @@
 
     </main>
 </body>
+<script>//eruda.init();</script>
 </html>

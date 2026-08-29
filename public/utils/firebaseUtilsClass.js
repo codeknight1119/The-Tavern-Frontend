@@ -104,37 +104,80 @@ export class Firebase {
         }
     }
 
-    async getDocuments(path, l, docParam, arrayFilter) {
-        try {
-            let constraints = [];
+async getDocuments(path, l, docParam, arrayFilter) {
+    try {
+        let constraints = [];
 
-            if (arrayFilter && arrayFilter.field && arrayFilter.value !== undefined) {
-                if (Array.isArray(arrayFilter.value)) {
-                    constraints.push(where(arrayFilter.field, 'array-contains-any', arrayFilter.value));
-                } else {
-                    constraints.push(where(arrayFilter.field, '==', arrayFilter.value));
-                }
+        if (
+            arrayFilter &&
+            arrayFilter.field &&
+            arrayFilter.value !== undefined
+        ) {
+            if (arrayFilter.operator === "array-contains") {
+
+                constraints.push(
+                    where(
+                        arrayFilter.field,
+                        "array-contains",
+                        arrayFilter.value
+                    )
+                );
+
+            } else if (
+                arrayFilter.operator === "array-contains-any" ||
+                Array.isArray(arrayFilter.value)
+            ) {
+
+                constraints.push(
+                    where(
+                        arrayFilter.field,
+                        "array-contains-any",
+                        arrayFilter.value
+                    )
+                );
+
+            } else {
+
+                constraints.push(
+                    where(
+                        arrayFilter.field,
+                        "==",
+                        arrayFilter.value
+                    )
+                );
             }
-
-            if (docParam && docParam.field) {
-                constraints.push(orderBy(docParam.field, docParam.direction || 'asc'));
-            }
-
-            if (typeof l === 'number' && l > 0) {
-                constraints.push(limit(l));
-            }
-
-            const querySnapshot = await getDocs(query(collection(this.db, path), ...constraints));
-
-            return querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-        } catch (e) {
-            console.log(e);
-            throw e;
         }
+
+        if (docParam && docParam.field) {
+            constraints.push(
+                orderBy(
+                    docParam.field,
+                    docParam.direction || "asc"
+                )
+            );
+        }
+
+        if (typeof l === "number" && l > 0) {
+            constraints.push(limit(l));
+        }
+
+        const querySnapshot = await getDocs(
+            query(
+                collection(this.db, path),
+                ...constraints
+            )
+        );
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+    } catch (e) {
+        console.log(e);
+        throw e;
     }
+}
 
     async getDocumentFieldIncludes(path, field, text) {
         try {
