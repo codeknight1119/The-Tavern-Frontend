@@ -242,12 +242,21 @@ function newFeatureButton(val) {
         a.title = val.tooltip;
     }
 
-    if(val.DM){
-      const dmEdit = a.querySelector(".dmEditIcon")
-      dmEdit.hidden = false;
-      dmEdit.addEventListener("click", ()=>{
-        document.getElementById("campaignAdminUI").hidden = false;
-      })
+    if (val.DM) {
+        const dmEdit = a.querySelector(".dmEditIcon");
+
+        dmEdit.hidden = false;
+
+        dmEdit.addEventListener("click", (event) => {
+            // Don't also activate/open the campaign itself.
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Initialize the admin panel for THIS campaign.
+            setupCampaignAdmin(val);
+
+            document.getElementById("campaignAdminUI").hidden = false;
+        });
     }
 
     a.dataset.id = val.id;
@@ -372,6 +381,10 @@ async function getMyFeatures() {
         });
     }
 }
+
+document.getElementById("campaignAdmin-close").addEventListener("click", () => {
+    document.getElementById("campaignAdminUI").hidden = true;
+});
 
 function validateCampaignIcon(icon) {
     icon = icon.trim();
