@@ -67,13 +67,21 @@
             </li>
         </ul>
         <ul>
-            <template id="sidebarTemplate">
+           <template id="sidebarTemplate">
                 <li>
-                    <a class="nav-btn">
+                    <div class="nav-btn" role="button" tabindex="0">
                         <i class="ra ra-2x"></i>
                         <span class="sidebarText"></span>
-                       <button class="dmEditIcon" hidden><i class="ra ra-2x ra-gears"></i></button> 
-                    </a>
+
+                        <button
+                            type="button"
+                            class="dmEditIcon"
+                            hidden
+                            aria-label="Campaign settings"
+                        >
+                            <i class="ra ra-2x ra-gears"></i>
+                        </button>
+                    </div>
                 </li>
             </template>
 
