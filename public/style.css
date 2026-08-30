@@ -817,3 +817,57 @@ dropdown-btn i {
     /* overflow-wrap: anywhere; */
     line-height: 0.75;
 }
+
+```css
+/* Campaign Administration Dropdowns */
+
+#campaignAdminSettings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.campaignAdmin-dropdown {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.campaignAdmin-dropdown summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    cursor: pointer;
+    user-select: none;
+
+    font-weight: bold;
+
+    list-style: none;
+}
+
+/* Remove default browser triangle */
+.campaignAdmin-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.campaignAdmin-dropdown summary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.campaignAdmin-chevron {
+    transition: transform 0.2s ease;
+}
+
+/* Rotate arrow when opened */
+.campaignAdmin-dropdown[open] .campaignAdmin-chevron {
+    transform: rotate(180deg);
+}
+
+.campaignAdmin-dropdown-content {
+    padding: 0 16px 16px 16px;
+}
+```

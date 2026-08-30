@@ -196,106 +196,182 @@
 
 
 <!-- Campaign Administration Popup -->
+```html
 <div id="campaignAdminUI" hidden>
 
-    <section id="campaignAdminPopup" role="dialog" aria-modal="true"
-        aria-labelledby="campaignAdminTitle">
+    <section id="campaignAdminPopup"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="campaignAdminTitle">
 
         <div id="campaignAdminHeader">
             <div>
                 <h2 id="campaignAdminTitle" class="cinzel-title">
                     Campaign Administration
                 </h2>
+
                 <p>
                     Only you, as this campaign's DM, can use these controls.
                 </p>
             </div>
 
-            <button id="campaignAdmin-close" type="button"
-                aria-label="Close campaign administration">
+            <button id="campaignAdmin-close"
+                    type="button"
+                    aria-label="Close campaign administration">
                 &times;
             </button>
         </div>
 
-        <!-- Add Users -->
-        <section class="campaignAdmin-section">
-            <h3>Add a User</h3>
 
-            <div class="campaignAdmin-search-row">
-                <label for="campaignAdmin-searchBy">Search by:</label>
+        <!-- ========================= -->
+        <!-- Campaign Settings Dropdown -->
+        <!-- ========================= -->
 
-                <select id="campaignAdmin-searchBy">
-                    <option value="name">User Name</option>
-                    <option value="Real Name" selected>Real Name</option>
-                </select>
+        <div id="campaignAdminSettings">
 
-                <input
-                    id="campaignAdmin-search"
-                    type="text"
-                    placeholder="Type a name..."
-                    autocomplete="off"
-                />
 
-                <button id="campaignAdmin-searchBtn" type="button">
-                    Search
-                </button>
-            </div>
+            <!-- Add User -->
+            <details class="campaignAdmin-dropdown">
 
-            <div id="campaignAdmin-foundUsers"></div>
-        </section>
+                <summary>
+                    <span>Add User</span>
+                    <span class="campaignAdmin-chevron">▾</span>
+                </summary>
 
-        <!-- Campaign Icon -->
-        <section class="campaignAdmin-section">
-            <h3>Campaign Icon</h3>
+                <div class="campaignAdmin-dropdown-content">
 
-            <p>
-                Browse the available RPG Awesome icons here:
-                <a
-                    href="https://nagoshiashumari.github.io/Rpg-Awesome/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    RPG Awesome
-                </a>
-            </p>
+                    <div class="campaignAdmin-search-row">
 
-            <div class="campaignAdmin-icon-row">
-                <input
-                    id="campaignAdmin-iconInput"
-                    type="text"
-                    placeholder="ra-dragon"
-                    autocomplete="off"
-                />
+                        <label for="campaignAdmin-searchBy">
+                            Search by:
+                        </label>
 
-                <button id="campaignAdmin-previewIcon" type="button">
-                    Preview
-                </button>
+                        <select id="campaignAdmin-searchBy">
+                            <option value="name">
+                                User Name
+                            </option>
 
-                <i
-                    id="campaignAdmin-iconPreview"
-                    class="ra ra-2x"
-                    aria-label="Campaign icon preview"
-                ></i>
-            </div>
+                            <option value="Real Name" selected>
+                                Real Name
+                            </option>
+                        </select>
 
-            <p
-                id="campaignAdmin-iconStatus"
-                class="campaignAdmin-status"
-                aria-live="polite"
-            ></p>
+                        <input
+                            id="campaignAdmin-search"
+                            type="text"
+                            placeholder="Type a name..."
+                            autocomplete="off"
+                        />
 
-            <button id="campaignAdmin-saveIcon" type="button" disabled>
-                Save Campaign Icon
-            </button>
-        </section>
+                        <button
+                            id="campaignAdmin-searchBtn"
+                            type="button">
+                            Search
+                        </button>
+
+                    </div>
+
+                    <div id="campaignAdmin-foundUsers"></div>
+
+                </div>
+
+            </details>
+
+
+            <!-- Campaign Icon -->
+            <details class="campaignAdmin-dropdown">
+
+                <summary>
+                    <span>Campaign Icon</span>
+                    <span class="campaignAdmin-chevron">▾</span>
+                </summary>
+
+                <div class="campaignAdmin-dropdown-content">
+
+                    <p>
+                        Browse the available RPG Awesome icons here:
+                        <a
+                            href="https://nagoshiashumari.github.io/Rpg-Awesome/"
+                            target="_blank"
+                            rel="noopener noreferrer">
+                            RPG Awesome
+                        </a>
+                    </p>
+
+                    <div class="campaignAdmin-icon-row">
+
+                        <input
+                            id="campaignAdmin-iconInput"
+                            type="text"
+                            placeholder="ra-dragon"
+                            autocomplete="off"
+                        />
+
+                        <button
+                            id="campaignAdmin-previewIcon"
+                            type="button">
+                            Preview
+                        </button>
+
+                        <i
+                            id="campaignAdmin-iconPreview"
+                            class="ra ra-2x"
+                            aria-label="Campaign icon preview">
+                        </i>
+
+                    </div>
+
+                    <p
+                        id="campaignAdmin-iconStatus"
+                        class="campaignAdmin-status"
+                        aria-live="polite">
+                    </p>
+
+                    <button
+                        id="campaignAdmin-saveIcon"
+                        type="button"
+                        disabled>
+                        Save Campaign Icon
+                    </button>
+
+                </div>
+
+            </details>
+
+
+            <!-- Future Setting -->
+            <!--
+            <details class="campaignAdmin-dropdown">
+
+                <summary>
+                    <span>Campaign Description</span>
+                    <span class="campaignAdmin-chevron">▾</span>
+                </summary>
+
+                <div class="campaignAdmin-dropdown-content">
+
+                    Your new setting goes here.
+
+                </div>
+
+            </details>
+            -->
+
+
+        </div>
+
 
         <p
             id="campaignAdmin-status"
             class="campaignAdmin-status"
-            aria-live="polite"
-        ></p>
+            aria-live="polite">
+        </p>
+
     </section>
+
 </div>
+```
+
 
 
         <template id="guestUITemplate">
