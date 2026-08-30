@@ -739,8 +739,6 @@ function setupCampaignAdmin(campaign) {
             searchCampaignAdminUsers();
         }
     };
-
-    adminUI.hidden = false;
 }
 
 const findFriends_popup = document.getElementById("findFriends-popup")
