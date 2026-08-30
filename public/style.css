@@ -629,8 +629,14 @@ dropdown-btn i {
 }
 
 #campaignAdminTitle {
-    margin: 0 0 0.25rem 0;
-    overflow-wrap: anywhere;
+    /* margin: 0 0 0.25rem 0; */
+    padding: 1rem;
+    /* margin-right: 100px; */
+    overflow-wrap: break-word;
+    line-height: 0.75;
+    width: fit-content;
+    font-size: 5em;
+    padding-bottom: .5em;
 }
 
 #campaignAdminHeader p {
@@ -818,7 +824,6 @@ dropdown-btn i {
     line-height: 0.75;
 }
 
-```css
 /* Campaign Administration Dropdowns */
 
 #campaignAdminSettings {
@@ -828,10 +833,10 @@ dropdown-btn i {
 }
 
 .campaignAdmin-dropdown {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--line-clr);
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .campaignAdmin-dropdown summary {
@@ -870,4 +875,4 @@ dropdown-btn i {
 .campaignAdmin-dropdown-content {
     padding: 0 16px 16px 16px;
 }
-```
+
