@@ -129,7 +129,7 @@ main {
 }
 
 #sidebar .sub-menu a {
-    padding-left: 2.5em;
+    padding-left: 1.5em;
 }
 
 dropdown-btn i {
@@ -143,7 +143,7 @@ dropdown-btn i {
 
 #toggle-btn {
     margin-left: auto;
-    padding: 1em;
+    padding: 0.75em;
     border: none;
     border-radius: .5em;
     background: none;
