@@ -908,6 +908,10 @@ function handleSidebarClick(event) {
 
     event.preventDefault();
 
+    if (event.target.closest(".dmEditIcon")) {
+        return;
+    }
+
     const targetAnchor =
         event.target.closest(".nav-btn");
 
