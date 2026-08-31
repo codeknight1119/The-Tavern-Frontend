@@ -16,18 +16,47 @@ async function getFirebaseUser() {
     return firebaseUser;
 }
 
+async function getUserIdFromRow(row) {
+    const label = row.querySelector("span")?.textContent?.trim() || "";
+    const separator = label.lastIndexOf(" (");
+
+    if (separator === -1 || !label.endsWith(")")) {
+        throw new Error("Could not identify the selected user.");
+    }
+
+    const username = label.slice(0, separator).trim();
+    const realName = label.slice(separator + 2, -1).trim();
+
+    const manifestDocument = await FirebaseUtils.getDocument("/manifest/userManifest");
+    const manifest = Array.isArray(manifestDocument?.manifest)
+        ? manifestDocument.manifest
+        : [];
+
+    const match = manifest.find((entry) =>
+        entry &&
+        entry.name === username &&
+        entry["Real Name"] === realName
+    );
+
+    if (!match?.id) {
+        throw new Error("Could not identify the selected user.");
+    }
+
+    return match.id;
+}
+
 async function addCampaignUser(userId, isCoDm) {
     if (!activeCampaignId) {
         throw new Error("No campaign is currently selected for administration.");
     }
 
     const authUser = await getFirebaseUser();
-    const token = await authUser.getIdToken();
+    let token = await authUser.getIdToken();
 
-    const response = await fetch(`${backendUrl}/campaignAdmin`, {
+    const makeRequest = (authToken) => fetch(`${backendUrl}/campaignAdmin`, {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${authToken}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -38,42 +67,24 @@ async function addCampaignUser(userId, isCoDm) {
         })
     });
 
+    let response = await makeRequest(token);
+
     if (response.status === 401) {
-        firebaseUser = null;
-        const refreshedUser = await getFirebaseUser();
-        const refreshedToken = await refreshedUser.getIdToken(true);
-
-        const retry = await fetch(`${backendUrl}/campaignAdmin`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${refreshedToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                action: "addUser",
-                campaignId: activeCampaignId,
-                userId,
-                isCoDm
-            })
-        });
-
-        if (!retry.ok) {
-            throw new Error(`Backend request failed (${retry.status}).`);
-        }
-
-        return retry.json();
+        token = await authUser.getIdToken(true);
+        response = await makeRequest(token);
     }
+
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        throw new Error(`Backend request failed (${response.status}).`);
+        throw new Error(result.error || `Backend request failed (${response.status}).`);
     }
 
-    return response.json();
+    return result;
 }
 
 function getUserLabel(row) {
-    const name = row.querySelector("span")?.textContent?.trim();
-    return name || "That user";
+    return row.querySelector("span")?.textContent?.trim() || "That user";
 }
 
 function addCoDmButton(row) {
@@ -81,9 +92,6 @@ function addCoDmButton(row) {
 
     const normalAddButton = row.querySelector("button");
     if (!normalAddButton) return;
-
-    const resultId = normalAddButton.dataset.userId;
-    if (!resultId) return;
 
     const coDmButton = document.createElement("button");
     coDmButton.type = "button";
@@ -97,18 +105,17 @@ function addCoDmButton(row) {
         const userLabel = getUserLabel(row);
 
         try {
-            const result = await addCampaignUser(resultId, true);
+            const userId = await getUserIdFromRow(row);
+            const result = await addCampaignUser(userId, true);
 
             if (result.alreadyAdded) {
                 status.textContent = `${userLabel} already has access to this campaign.`;
-            } else if (result.alreadyCoDm) {
-                status.textContent = `${userLabel} is already a co-DM.`;
             } else {
                 status.textContent = `${userLabel} was added as a co-DM.`;
             }
         } catch (error) {
             console.error("Failed to add campaign co-DM:", error);
-            status.textContent = "Could not add that user as a co-DM.";
+            status.textContent = error.message || "Could not add that user as a co-DM.";
         } finally {
             coDmButton.disabled = false;
         }
@@ -125,13 +132,11 @@ function processFoundUsers() {
 }
 
 function watchCampaignAdmin() {
-    const adminUI = document.getElementById("campaignAdminUI");
     const foundUsers = document.getElementById("campaignAdmin-foundUsers");
 
-    if (!adminUI || !foundUsers) return;
+    if (!foundUsers) return;
 
-    // Capture the campaign ID from the campaign's gear button before the
-    // existing app.js handler opens the administration panel.
+    // Capture the campaign ID before app.js opens the administration panel.
     document.addEventListener("click", (event) => {
         const editButton = event.target.closest(".dmEditIcon");
         if (!editButton) return;
