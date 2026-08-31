@@ -11,3 +11,7 @@ const firebaseConfig = {
 import {Firebase} from "/public/utils/firebaseUtilsClass.js"
 
 export const FirebaseUtils = new Firebase(firebaseConfig)
+
+// Load campaign administration enhancements after FirebaseUtils has been
+// initialized. This avoids changing the large app.js file.
+import("./campaignAdmin.js");
