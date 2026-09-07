@@ -1168,7 +1168,7 @@ async function renderTool(id) {
             const waitText = document.getElementById("rollCall_waitText");
             waitText.hidden = false;
 
-            const API_URL = "https://script.google.com/macros/s/AKfycbzQSC4acx8p9j_efwHDXznEWxkxL22yQf3blAbyDyPu7lz6a3GtEX_kL3Fvk0u2GRj7/exec";
+            const API_URL = "https://script.google.com/macros/s/AKfycbwLeJsbo1fDb6Tm7F1JMYthUe0u4h0Y4J8IPXOGl_FNlWK9YqNq6OAwqXQ6GIA7XIQ2/exec";
 
 
             // ============================================================
@@ -1190,6 +1190,7 @@ async function renderTool(id) {
                     }
 
                     const data = await response.json();
+                    console.log(data)
 
                     waitText.hidden = true;
 
