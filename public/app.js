@@ -1161,37 +1161,270 @@ async function renderTool(id) {
             break
 
         case "roleCall":
-            const guestUI = document.getElementById("guestUITemplate").content.cloneNode(true)
-            mainContentArea.appendChild(guestUI)
-            const waitText = document.getElementById("rollCall_waitText")
+            const guestUI = document.getElementById("guestUITemplate").content.cloneNode(true);
+
+            mainContentArea.appendChild(guestUI);
+
+            const waitText = document.getElementById("rollCall_waitText");
             waitText.hidden = false;
-            const roleCallPromise = await fetch("https://script.google.com/macros/s/AKfycbztnQLiJnHbNZra08IjKaZsHYtw1vB65zV4F1aweSLW0-mukY_eNLL1zggN_SN532Ot/exec")
-            const roleCallData = await roleCallPromise.json();
-            waitText.hidden = true;
 
-            const checkedInMemberHolder = document.getElementById("checkedInMembers");
-            roleCallData.members.forEach((val) => {
-                let htmlCheckedIn = `<pre class="checkedInGuests">${val.firstName} ${val.lastName}</pre><br>`
-                const checkedInElement = document.createElement("div")
-                checkedInElement.dataset.name = val.studentId
-                checkedInElement.innerHTML = htmlCheckedIn
-                checkedInMemberHolder.appendChild(checkedInElement)
-            })
+            const API_URL = "https://script.google.com/macros/s/AKfycbzQSC4acx8p9j_efwHDXznEWxkxL22yQf3blAbyDyPu7lz6a3GtEX_kL3Fvk0u2GRj7/exec";
 
-            const checkedInGuestHolder = document.getElementById("checkedInGuests");
-            roleCallData.guests.forEach((val) => {
-                let end = ""
-                if (val.totalMeetingsAttende === 3) {
-                    end = `\nNeeds to pay dues soon.`
+
+            // ============================================================
+            // LOAD TODAY'S ATTENDANCE
+            // ============================================================
+
+            async function loadTodayAttendance() {
+
+                waitText.hidden = false;
+
+                try {
+
+                    const response = await fetch(
+                        `${API_URL}?action=today`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    waitText.hidden = true;
+
+                    if (!data.success) {
+                        throw new Error(data.error || "Unknown API error");
+                    }
+
+                    displayAttendance(data);
+
+                } catch (error) {
+
+                    waitText.innerText = "Failed to load attendance.";
+                    waitText.hidden = false;
+
+                    console.error("Attendance error:", error);
                 }
-                let htmlCheckedIn = `<pre class="checkedInGuest">${val.firstName} ${val.lastName}: ${val.totalMeetingsAttended}/3 trial meetings.${end}</pre><br>`
-                const checkedInElement = document.createElement("div")
-                checkedInElement.dataset.name = val.studentId
-                checkedInElement.innerHTML = htmlCheckedIn
-                checkedInGuestHolder.appendChild(checkedInElement)
-            })
-            document.getElementById("rollCall_memberNum").innerText = roleCallData.members.length;
-            document.getElementById("rollCall_GuestNum").innerText = roleCallData.guests.length
+            }
+
+
+            // ============================================================
+            // DISPLAY ATTENDANCE
+            // ============================================================
+
+            function displayAttendance(data) {
+
+                const checkedInMemberHolder =
+                    document.getElementById("checkedInMembers");
+
+                const checkedInGuestHolder =
+                    document.getElementById("checkedInGuests");
+
+                // Clear old results
+                checkedInMemberHolder.innerHTML = "";
+                checkedInGuestHolder.innerHTML = "";
+
+
+                // ========================================================
+                // MEMBERS
+                // ========================================================
+
+                data.members.forEach((person) => {
+
+                    const checkedInElement =
+                        document.createElement("div");
+
+                    checkedInElement.dataset.name =
+                        `${person.firstName} ${person.lastName}`.toLowerCase();
+
+                    checkedInElement.innerHTML = `
+                        <pre class="checkedInGuest">
+            ${escapeHTML(person.firstName)} ${escapeHTML(person.lastName)}
+                        </pre>
+                        <br>
+                    `;
+
+                    checkedInMemberHolder.appendChild(
+                        checkedInElement
+                    );
+                });
+
+
+                // ========================================================
+                // GUESTS
+                // ========================================================
+
+                data.guests.forEach((person) => {
+
+                    let end = "";
+
+                    if (person.totalMeetingsAttended >= 3) {
+
+                        end = `
+            Needs to pay dues soon.
+                        `;
+                    }
+
+                    const checkedInElement =
+                        document.createElement("div");
+
+                    checkedInElement.dataset.name =
+                        `${person.firstName} ${person.lastName}`.toLowerCase();
+
+                    checkedInElement.innerHTML = `
+                        <pre class="checkedInGuest">
+            ${escapeHTML(person.firstName)} ${escapeHTML(person.lastName)}: ${person.totalMeetingsAttended}/3 trial meetings.${end}
+                        </pre>
+                        <br>
+                    `;
+
+                    checkedInGuestHolder.appendChild(
+                        checkedInElement
+                    );
+                });
+
+
+                // ========================================================
+                // NUMBERS
+                // ========================================================
+
+                document.getElementById("rollCall_memberNum").innerText =
+                    data.members.length;
+
+                document.getElementById("rollCall_GuestNum").innerText =
+                    data.guests.length;
+            }
+
+
+            // ============================================================
+            // LOAD A PAST MEETING
+            // ============================================================
+
+            async function loadMeeting(date) {
+
+                try {
+
+                    const response = await fetch(
+                        `${API_URL}?action=day&date=${encodeURIComponent(date)}`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.error || "Unknown API error");
+                    }
+
+                    return data;
+
+                } catch (error) {
+
+                    console.error(
+                        `Failed to load meeting ${date}:`,
+                        error
+                    );
+
+                    return null;
+                }
+            }
+
+
+            // ============================================================
+            // GET ALL MEETING DATES
+            // ============================================================
+
+            async function getMeetingDates() {
+
+                try {
+
+                    const response = await fetch(
+                        `${API_URL}?action=dates`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.error || "Unknown API error");
+                    }
+
+                    return data.dates;
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to load meeting dates:",
+                        error
+                    );
+
+                    return [];
+                }
+            }
+
+
+            // ============================================================
+            // GET CURRENT ROSTER
+            // ============================================================
+
+            async function getCurrentRoster() {
+
+                try {
+
+                    const response = await fetch(
+                        `${API_URL}?action=roster`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.error || "Unknown API error");
+                    }
+
+                    return data;
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to load roster:",
+                        error
+                    );
+
+                    return null;
+                }
+            }
+
+
+            // ============================================================
+            // HTML ESCAPE
+            // ============================================================
+
+            function escapeHTML(value) {
+
+                return String(value)
+                    .replaceAll("&", "&amp;")
+                    .replaceAll("<", "&lt;")
+                    .replaceAll(">", "&gt;")
+                    .replaceAll('"', "&quot;")
+                    .replaceAll("'", "&#039;");
+            }
+
+
+            // ============================================================
+            // START
+            // ============================================================
+
+            loadTodayAttendance();
             break
     }
 }

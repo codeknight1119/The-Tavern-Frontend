@@ -372,20 +372,97 @@
 
 
 
-        <template id="guestUITemplate">
-            <div>
-                <h2 id="rollCall_waitText" hidden>Loading...</h2>
-                <strong><pre id="rollCall_memberNum"></pre><pre> Members</pre></strong>
-                <strong><pre id="rollCall_GuestNum"></pre><pre> Guests</pre></strong>
-                <h3>Checked in members</h3>
-                <br>
-                <div id="checkedInMembers"></div>
-                <br><br>
-                <h3>Checked in Guests</h3>
-                <br>
-                <div id="checkedInGuests"></div>
+    <template id="guestUITemplate">
+
+        <div class="rollCallContainer">
+
+            <!-- ============================================= -->
+            <!-- TODAY -->
+            <!-- ============================================= -->
+
+            <h2 id="rollCall_waitText" hidden>
+                Loading...
+            </h2>
+
+
+            <div class="rollCallStats">
+
+                <strong>
+                    <pre id="rollCall_memberNum">0</pre>
+                    <pre> Members</pre>
+                </strong>
+
+                <strong>
+                    <pre id="rollCall_GuestNum">0</pre>
+                    <pre> Guests</pre>
+                </strong>
+
             </div>
-        </template>
+
+
+            <!-- ============================================= -->
+            <!-- MEMBERS -->
+            <!-- ============================================= -->
+
+            <h3>Checked in members</h3>
+
+            <br>
+
+            <div id="checkedInMembers"></div>
+
+
+            <br><br>
+
+
+            <!-- ============================================= -->
+            <!-- GUESTS -->
+            <!-- ============================================= -->
+
+            <h3>Checked in Guests</h3>
+
+            <br>
+
+            <div id="checkedInGuests"></div>
+
+
+            <br><br><br>
+
+
+            <!-- ============================================= -->
+            <!-- PAST MEETINGS -->
+            <!-- ============================================= -->
+
+            <h2>Past Meetings</h2>
+
+            <p>
+                Select a previous club meeting to view its attendance report.
+            </p>
+
+            <div id="pastMeetings">
+                Loading meetings...
+            </div>
+
+
+            <br><br>
+
+
+            <!-- ============================================= -->
+            <!-- CURRENT ROSTER -->
+            <!-- ============================================= -->
+
+            <h2>Current Roster</h2>
+
+            <p>
+                Members who consistently attend club meetings.
+            </p>
+
+            <div id="currentRoster">
+                Loading roster...
+            </div>
+
+        </div>
+
+    </template>
 
         <template id="officersDeskUI">
             <div>
