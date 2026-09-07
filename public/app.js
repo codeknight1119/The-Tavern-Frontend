@@ -1239,12 +1239,15 @@ async function renderTool(id) {
                     checkedInElement.dataset.name =
                         `${person.firstName} ${person.lastName}`.toLowerCase();
 
-                    checkedInElement.innerHTML = `
+                        let eltext = `
                         <pre class="checkedInGuest">
             ${escapeHTML(person.firstName)} ${escapeHTML(person.lastName)}
                         </pre>
                         <br>
-                    `;
+                    `
+                    eltext = eltext.trim()
+
+                    checkedInElement.innerHTML = eltext;
 
                     checkedInMemberHolder.appendChild(
                         checkedInElement
@@ -1273,12 +1276,15 @@ async function renderTool(id) {
                     checkedInElement.dataset.name =
                         `${person.firstName} ${person.lastName}`.toLowerCase();
 
-                    checkedInElement.innerHTML = `
+                        let checkedIntext = `
                         <pre class="checkedInGuest">
             ${escapeHTML(person.firstName)} ${escapeHTML(person.lastName)}: ${person.totalMeetingsAttended}/3 trial meetings.${end}
                         </pre>
                         <br>
-                    `;
+                    `
+                    checkedIntext = checkedIntext.trim()
+
+                    checkedInElement.innerHTML = checkedIntext;
 
                     checkedInGuestHolder.appendChild(
                         checkedInElement
