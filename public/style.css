@@ -32,6 +32,11 @@ body {
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);
     align-items: stretch;
+    transition: grid-template-columns 300ms ease-in-out;
+}
+
+body:has(#sidebar.close) {
+    grid-template-columns: 60px minmax(0, 1fr);
 }
 
 #sidebar {
