@@ -26,10 +26,19 @@ header {
 body {
     min-height: 100vh;
     min-height: 100dvh;
+    margin: 0;
     background-color: var(--base-clr);
     color: var(--text-clr);
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 250px minmax(0, 1fr);
+    align-items: stretch;
+}
+
+#sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    align-self: stretch;
 }
 
 main {
