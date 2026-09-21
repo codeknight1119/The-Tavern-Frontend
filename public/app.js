@@ -3,7 +3,7 @@ import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
 import { Markdown } from 'https://esm.sh/@tiptap/markdown';
-
+import eruda from "https://jsdelivr.net";
 
 
 //////////////////////////////////////////////////////////////////////
@@ -214,6 +214,7 @@ async function checkUser() {
             permissions = Object.keys(claims)
                 .filter(key => !firebaseNoise.includes(key) && claims[key] === true);
         }
+        if(permissions.includes("tech")){window.eruda.init();}
 
         await getMyFeatures()
     }
