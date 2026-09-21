@@ -3,7 +3,7 @@ import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
 import { Markdown } from 'https://esm.sh/@tiptap/markdown';
-import eruda from "https://jsdelivr.net";
+import eruda from "https://cdn.jsdelivr.net/npm/eruda/+esm";
 
 
 //////////////////////////////////////////////////////////////////////
