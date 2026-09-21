@@ -214,7 +214,7 @@ async function checkUser() {
             permissions = Object.keys(claims)
                 .filter(key => !firebaseNoise.includes(key) && claims[key] === true);
         }
-        if(permissions.includes("tech")){window.eruda.init();}
+        if(permissions.includes("tech")){eruda.init();}
 
         await getMyFeatures()
     }
