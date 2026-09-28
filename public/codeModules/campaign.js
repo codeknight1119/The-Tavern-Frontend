@@ -1,4 +1,4 @@
-import {checkUserManifest} from "public/codeModules/campaign.js"
+import {checkUserManifest} from "./userManifest.js"
 
 document.getElementById("campaignAdmin-close").addEventListener("click", () => {
     document.getElementById("campaignAdminUI").hidden = true;

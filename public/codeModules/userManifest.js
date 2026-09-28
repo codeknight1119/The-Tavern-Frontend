@@ -1,3 +1,5 @@
+import { FirebaseUtils } from "../firebaseUtils.js";
+import {state} from "./state.js"
 export async function checkUserManifest() {
     console.log("=== USER MANIFEST DEBUG START ===");
 

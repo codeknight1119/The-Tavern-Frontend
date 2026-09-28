@@ -1,5 +1,5 @@
-import { FirebaseUtils } from "./firebaseUtils.js";
-import {state} from "public/codeModules/state.js"
+import { FirebaseUtils } from "../firebaseUtils.js";
+import {state} from "./state.js"
 
 async function newBoard(title, body, id = null) {
     const fragment = document.getElementById("board-template").content.cloneNode(true);

@@ -1,6 +1,7 @@
-import { FirebaseUtils } from "public/firebaseUtils.js";
-import {state} from "public/codeModules/state.js"
-import {checkUserManifest} from "public/codeModules/campaign.js"
+import { FirebaseUtils } from "../firebaseUtils.js";
+import {state} from "./state.js"
+import {checkUserManifest} from "./campaign.js"
+import {fetchServer} from "./backend.js"
 
 document.getElementById("userSearchBttn").addEventListener("click", async () => {
 

@@ -1,6 +1,12 @@
-import { FirebaseUtils } from "./firebaseUtils.js";
-import {state} from "public/codeModules/state.js"
+import { FirebaseUtils } from "../firebaseUtils.js";
+import {state} from "./state.js"
 
+function hideFeatureHTML() {
+    Array.from(document.getElementsByClassName("featureHTML")).forEach((val) => { val.hidden = true })
+}
+function getFeatureById(id) {
+    return state.myFeatures.find((obj) => obj.id === id)
+}
 
 function listenToConversation(conversationId) {
     // Don't create multiple listeners for the same conversation.
