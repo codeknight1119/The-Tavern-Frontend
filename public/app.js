@@ -4,29 +4,12 @@ import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
 import { Markdown } from 'https://esm.sh/@tiptap/markdown';
 import eruda from "https://cdn.jsdelivr.net/npm/eruda/+esm";
-
+import {state} from "public/codeModules/state.js"
 
 //////////////////////////////////////////////////////////////////////
 /////////////////////////GLOBAL VARS//////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-let user = null;
-let firebaseUser = null
-let permissions = null;
-let myFeatures = [];
-let currentSelectedSidebar = null
 const chatUI = document.getElementById("chatTools")
-let ss_TOOLS = new Map()
-let ss_CHATS = new Map()
-let ss_CAMPAIGNS = new Map()
-let activeChat = null;
-let activeFeature = null;
-let activeFeatureType = null;
-let userManifest = null;
-let guestManifest = null;
-let activeCampaignAdminId = null;
-
-
-
 const chatArea = document.getElementById("sendBar")
 
 const messageInput = new Editor({
@@ -49,7 +32,7 @@ const messageInput = new Editor({
 
 function setChatSendLocked(chatId, locked) {
     // Only modify the currently displayed chat.
-    if (chatId !== activeChat) return;
+    if (chatId !== state.activeChat) return;
 
     const sendBtn = document.getElementById("sendBtn");
     const sendBar = document.getElementById("sendBar");
@@ -105,7 +88,7 @@ async function checkUserManifest() {
                 "ERROR: /manifest/userManifest does not exist."
             );
 
-            userManifest = [];
+            state.userManifest = [];
             return;
         }
 
@@ -115,25 +98,25 @@ async function checkUserManifest() {
                 manifestData.manifest
             );
 
-            userManifest = [];
+            state.userManifest = [];
             return;
         }
 
-        userManifest = manifestData.manifest;
+        state.userManifest = manifestData.manifest;
 
         console.log(
-            `Loaded ${userManifest.length} users into userManifest.`
+            `Loaded ${state.userManifest.length} users into userManifest.`
         );
 
-        if (userManifest.length > 0) {
+        if (state.userManifest.length > 0) {
             console.log(
                 "First manifest entry:",
-                userManifest[0]
+                state.userManifest[0]
             );
 
             console.log(
                 "Manifest fields:",
-                Object.keys(userManifest[0])
+                Object.keys(state.userManifest[0])
             );
         }
 
@@ -145,7 +128,7 @@ async function checkUserManifest() {
             error
         );
 
-        userManifest = [];
+        state.userManifest = [];
         throw error;
     }
 }
@@ -189,13 +172,13 @@ async function checkUser() {
     } else {
 
         let uid = userCheck.user.uid
-        user = await FirebaseUtils.getDocument(`users/${uid}`)
-        user.uid = uid
-        firebaseUser = userCheck.user
-        console.log("firebase user", firebaseUser)
-        console.log("raw user", userCheck)
+        state.user = await FirebaseUtils.getDocument(`users/${uid}`)
+        state.user.uid = uid
+        state.firebaseUser = userCheck.user
+        console.log("firebase user", state.firebaseUser)
+        console.log("raw user", state.userCheck)
 
-        const tokens = await firebaseUser.getIdTokenResult(true);
+        const tokens = await state.firebaseUser.getIdTokenResult(true);
         const claims = tokens?.claims || {};
 
         // The backend stores application permissions as an array in the
@@ -203,7 +186,7 @@ async function checkUser() {
         // Keep a small fallback for older claim formats, but do not treat
         // the "permissions" and "allowed" claim names themselves as roles.
         if (Array.isArray(claims.permissions)) {
-            permissions = [...claims.permissions];
+            state.permissions = [...claims.permissions];
         } else {
             const firebaseNoise = [
                 "name", "picture", "iss", "aud", "auth_time", "user_id",
@@ -211,10 +194,10 @@ async function checkUser() {
                 "permissions", "allowed"
             ];
 
-            permissions = Object.keys(claims)
+            state.permissions = Object.keys(claims)
                 .filter(key => !firebaseNoise.includes(key) && claims[key] === true);
         }
-        if(permissions.includes("tech")){eruda.init();}
+        if(state.permissions.includes("tech")){eruda.init();}
 
         await getMyFeatures()
     }
@@ -280,10 +263,10 @@ function listenToConversation(conversationId) {
         `/conversations/${conversationId}/messages`,
         (data) => {
             // Ignore messages from another chat.
-            if (conversationId !== activeChat) return;
+            if (conversationId !== state.activeChat) return;
 
             // We already render our own message optimistically.
-            if (data.uid === user.uid) return;
+            if (data.uid === state.user.uid) return;
 
             renderMessage(data);
         }
@@ -294,10 +277,10 @@ function listenToConversation(conversationId) {
 
 const friendFriendsBtn = document.getElementById("findFriends-btn")
 async function getMyFeatures() {
-    if (user !== null) {
+    if (state.user !== null) {
         async function setUpFeatures(params, parent, setActive) {
             const docs = await FirebaseUtils.getDocuments("/features", undefined, { field: "priority" }, { field: "allowed", value: params })
-            myFeatures = myFeatures.concat(docs)
+            state.myFeatures = state.myFeatures.concat(docs)
 
             const parentSidebar = document.getElementById(parent)
             const reversedFeatures = docs.toReversed()
@@ -306,7 +289,7 @@ async function getMyFeatures() {
                 const fragment = newFeatureButton(val)
                 if (index === (reversedFeatures.length - 1) && setActive) {
                     const li = fragment.querySelector('li')
-                    currentSelectedSidebar = li;
+                    state.currentSelectedSidebar = li;
                     li.classList.add("active")
                     loadSidebar(val)
                 }
@@ -315,12 +298,12 @@ async function getMyFeatures() {
         }
 
         await setUpFeatures(["all"], "everySidebarParent", true)
-        if (permissions.length !== 0) {
-            await setUpFeatures(permissions, "personal-menu", false)
+        if (state.permissions.length !== 0) {
+            await setUpFeatures(state.permissions, "personal-menu", false)
         }
 
-        if (user.campaigns) {
-    user.campaigns.forEach(async (campaign) => {
+        if (state.user.campaigns) {
+    state.user.campaigns.forEach(async (campaign) => {
         try {
             // Campaigns now live under /campaigns, not /features.
             const campaignInfo = await FirebaseUtils.getDocument(
@@ -341,8 +324,8 @@ async function getMyFeatures() {
             campaignInfo.DM = campaign.DM === true;
             campaignInfo.type = "campaign";
 
-            myFeatures.push(campaignInfo);
-            ss_CAMPAIGNS.set(campaign.id, campaignInfo);
+            state.myFeatures.push(campaignInfo);
+            state.ss_CAMPAIGNS.set(campaign.id, campaignInfo);
 
             const fragment = newFeatureButton(campaignInfo);
             document
@@ -363,7 +346,7 @@ async function getMyFeatures() {
                 null,
                 {
                     field: "users",
-                    value: user.uid,
+                    value: state.user.uid,
                     operator: "array-contains"
                 }
             );
@@ -375,7 +358,7 @@ async function getMyFeatures() {
 
             // IMPORTANT:
             // Conversations must be searchable through getFeatureById().
-            myFeatures.push(val);
+            state.myFeatures.push(val);
 
             // Start the real-time listener.
             listenToConversation(val.id);
@@ -500,8 +483,8 @@ async function searchCampaignAdminUsers() {
 
     const key = searchBy.value || "name";
 
-    const results = userManifest.filter((item) => {
-        if (!item || item.id === user.uid) {
+    const results = state.userManifest.filter((item) => {
+        if (!item || item.id === state.user.uid) {
             return false;
         }
 
@@ -539,7 +522,7 @@ async function searchCampaignAdminUsers() {
         addButton.textContent = "Add to Campaign";
 
         addButton.addEventListener("click", async () => {
-            if (!activeCampaignAdminId) {
+            if (!state.activeCampaignAdminId) {
                 return;
             }
 
@@ -550,7 +533,7 @@ async function searchCampaignAdminUsers() {
                     "campaignAdmin",
                     {
                         action: "addUser",
-                        campaignId: activeCampaignAdminId,
+                        campaignId: state.activeCampaignAdminId,
                         userId: result.id
                     }
                 );
@@ -599,7 +582,7 @@ function setupCampaignAdmin(campaign) {
         return;
     }
 
-    activeCampaignAdminId = null;
+    state.activeCampaignAdminId = null;
     adminUI.hidden = true;
 
     // Only a campaign membership explicitly marked DM gets
@@ -608,7 +591,7 @@ function setupCampaignAdmin(campaign) {
         return;
     }
 
-    activeCampaignAdminId = campaign.id;
+    state.activeCampaignAdminId = campaign.id;
 
     const iconInput = document.getElementById(
         "campaignAdmin-iconInput"
@@ -666,7 +649,7 @@ function setupCampaignAdmin(campaign) {
     };
 
     saveIconButton.onclick = async () => {
-        if (!activeCampaignAdminId) {
+        if (!state.activeCampaignAdminId) {
             return;
         }
 
@@ -684,21 +667,21 @@ function setupCampaignAdmin(campaign) {
                 "campaignAdmin",
                 {
                     action: "updateIcon",
-                    campaignId: activeCampaignAdminId,
+                    campaignId: state.activeCampaignAdminId,
                     icon
                 }
             );
 
             campaign.icon = response.icon;
 
-            ss_CAMPAIGNS.set(
-                activeCampaignAdminId,
+            state.ss_CAMPAIGNS.set(
+                state.activeCampaignAdminId,
                 campaign
             );
 
             // Update the icon shown in My Pack.
             const sidebarButton = document.querySelector(
-                `.nav-btn[data-id="${CSS.escape(activeCampaignAdminId)}"]`
+                `.nav-btn[data-id="${CSS.escape(state.activeCampaignAdminId)}"]`
             );
 
             if (sidebarButton) {
@@ -762,7 +745,7 @@ async function search() {
     console.log("key:", key);
 
     await checkUserManifest()
-    const filteredResults = userManifest.filter(item => {
+    const filteredResults = state.userManifest.filter(item => {
         const itemValue = String(item[key] || "").toLowerCase();
         return itemValue.includes(searchTerm);
     });
@@ -771,9 +754,9 @@ async function search() {
     findFriends_outTemplateParent.replaceChildren();
 
     // Render matching result
-    if (filteredResults.length > 1 || (filteredResults.length === 1 && filteredResults[0].id !== user.uid)) {
+    if (filteredResults.length > 1 || (filteredResults.length === 1 && filteredResults[0].id !== state.user.uid)) {
         filteredResults.forEach((result) => {
-            if (result.id === user.uid) return
+            if (result.id === state.user.uid) return
             const clone = document.getElementById("findFriends-foundFriends_template").content.cloneNode(true);
 
             const card = clone.firstElementChild
@@ -832,7 +815,7 @@ document.getElementById("findFriends-createConv").addEventListener(
         });
 
         // Always include yourself.
-        chatIds.push(user.uid);
+        chatIds.push(state.user.uid);
 
         // Prevent creating a conversation with nobody else.
         if (chatIds.length < 2) {
@@ -869,7 +852,7 @@ document.getElementById("findFriends-createConv").addEventListener(
 
             // VERY IMPORTANT:
             // handleSidebarClick() searches myFeatures.
-            myFeatures.push(conversation);
+            state.myFeatures.push(conversation);
 
             // Put it in the sidebar.
             const frag = newFeatureButton(conversation);
@@ -879,8 +862,8 @@ document.getElementById("findFriends-createConv").addEventListener(
             listenToConversation(conversation.id);
 
             // Open the conversation immediately.
-            activeChat = conversation.id;
-            activeFeature = "conversation";
+            state.activeChat = conversation.id;
+            state.activeFeature = "conversation";
 
             // Close the popup.
             findFriends_popup.style.display = "none";
@@ -919,7 +902,7 @@ function handleSidebarClick(event) {
     const clickedLi =
         targetAnchor.parentElement;
 
-    if (clickedLi === currentSelectedSidebar) {
+    if (clickedLi === state.currentSelectedSidebar) {
         return;
     }
 
@@ -937,12 +920,12 @@ function handleSidebarClick(event) {
         return;
     }
 
-    if (currentSelectedSidebar) {
-        currentSelectedSidebar.classList.remove("active");
+    if (state.currentSelectedSidebar) {
+        state.currentSelectedSidebar.classList.remove("active");
     }
 
     clickedLi.classList.add("active");
-    currentSelectedSidebar = clickedLi;
+    state.currentSelectedSidebar = clickedLi;
 
     mainContentArea.replaceChildren();
 
@@ -956,7 +939,7 @@ function hideFeatureHTML() {
 async function loadSidebar(data) {
     hideFeatureHTML();
 
-    activeFeatureType = data.type;
+    state.activeFeatureType = data.type;
 
     mainContentArea = document.getElementById("mainContentArea");
     mainContentArea.innerHTML = "";
@@ -964,12 +947,12 @@ async function loadSidebar(data) {
     switch (data.type) {
 
         case "tool":
-            activeFeature = data.id;
+            state.activeFeature = data.id;
             await renderTool(data.id);
             break;
 
         case "chat":
-            activeFeature = data.id;
+            state.activeFeature = data.id;
             await renderChat(data.id, false);
             break;
 case "campaign":
@@ -977,7 +960,7 @@ case "campaign":
     mainContentArea.appendChild(campaignUI);
     mainContentArea = campaignUI;
 
-    activeFeature = data.id;
+    state.activeFeature = data.id;
 
     await renderChat(data.id, false);
 
@@ -985,7 +968,7 @@ case "campaign":
 
     break;
         case "conversation":
-            activeFeature = "conversation";
+            state.activeFeature = "conversation";
 
             await renderChat(data.id, true);
             break;
@@ -997,7 +980,7 @@ case "campaign":
 }
 
 function getFeatureById(id) {
-    return myFeatures.find((obj) => obj.id === id)
+    return state.myFeatures.find((obj) => obj.id === id)
 }
 
 let mainContentArea = document.getElementById("mainContentArea")
@@ -1012,7 +995,7 @@ async function newBoard(title, body, id = null) {
     const titleText = fragment.querySelector(".board-title");
     const bodyText = fragment.querySelector(".board-body");
     const delBtn = fragment.querySelector(".board-delete");
-    const isOfficer = permissions.includes("officer");
+    const isOfficer = state.permissions.includes("officer");
 
     titleText.contentEditable = bodyText.contentEditable = isOfficer;
     delBtn.hidden = !isOfficer;
@@ -1021,19 +1004,19 @@ async function newBoard(title, body, id = null) {
 
     // 2. ONLY add a new document to Firebase if we didn't pass an existing ID
     if (!finalId) {
-        const newDocData = await FirebaseUtils.addDocument(`/features/${activeFeature}/boards`, {
+        const newDocData = await FirebaseUtils.addDocument(`/features/${state.activeFeature}/boards`, {
             title: title || "Title",
             body: body || "Type announcement"
         });
         finalId = newDocData.id;
 
-        if (ss_TOOLS.get(activeFeature)) {
-            ss_TOOLS.get(activeFeature).unshift({ id: finalId, ...newDocData });
+        if (state.ss_TOOLS.get(state.activeFeature)) {
+            state.ss_TOOLS.get(state.activeFeature).unshift({ id: finalId, ...newDocData });
         }
     }
 
     console.log(finalId);
-    const path = `/features/${activeFeature}/boards/${finalId}`;
+    const path = `/features/${state.activeFeature}/boards/${finalId}`;
 
     if (isOfficer) {
         titleText.addEventListener("blur", async (event) => {
@@ -1075,15 +1058,15 @@ async function renderTool(id) {
     switch (toolData.toolType) {
         case ("board"):
             let boards;
-            if (permissions.includes("officer")) {
+            if (state.permissions.includes("officer")) {
                 document.getElementById("board-new").hidden = false;
             }
 
-            if (ss_TOOLS.get(id)) {
-                boards = ss_TOOLS.get(id)
+            if (state.ss_TOOLS.get(id)) {
+                boards = state.ss_TOOLS.get(id)
             } else {
                 boards = await FirebaseUtils.getDocuments(`features/${id}/boards`, BOARD_COUNT)
-                ss_TOOLS.set(id, boards)
+                state.ss_TOOLS.set(id, boards)
             }
 
             mainContentArea.replaceChildren();
@@ -1114,7 +1097,7 @@ async function renderTool(id) {
                     return
                 }
                 const data = await FirebaseUtils.addDocument(`features/${id}/tickets`, {
-                    "creator": user.uid,
+                    "creator": state.user.uid,
                     "type": ticketType,
                     "description": document.getElementById("OD_textInput").value,
                     "progress": "submitted",
@@ -1143,7 +1126,7 @@ async function renderTool(id) {
                         `/features/${id}/tickets`,
                         15,
                         {},
-                        { field: "creator", value: user.uid }
+                        { field: "creator", value: state.user.uid }
                     );
                     myTickets.forEach((val) => {
                         const OD_myTicket_Template = document.getElementById("OD_myTicket_template").content.cloneNode(true)
@@ -1448,16 +1431,16 @@ async function renderChat(id, conversation = false) {
     chatUI.hidden = false;
 
     // Set these BEFORE doing the async Firebase request.
-    activeChat = id;
+    state.activeChat = id;
 
     if (conversation) {
-        activeFeature = "conversation";
-        activeFeatureType = "conversation";
+        state.activeFeature = "conversation";
+        state.activeFeatureType = "conversation";
 
         // Make sure the realtime listener exists.
         listenToConversation(id);
     } else {
-        activeFeature = id;
+        state.activeFeature = id;
     }
 
     // Clear the old chat immediately.
@@ -1479,7 +1462,7 @@ async function renderChat(id, conversation = false) {
         console.error("Failed to load chat:", error);
 
         // Only show the error if we're still looking at this chat.
-        if (activeChat === id) {
+        if (state.activeChat === id) {
             mainContentArea.innerHTML =
                 "<p>Could not load this conversation.</p>";
         }
@@ -1491,7 +1474,7 @@ async function renderChat(id, conversation = false) {
     // Do NOT allow the old request to overwrite the new chat.
     if (
         renderId !== chatRenderGeneration ||
-        activeChat !== id
+        state.activeChat !== id
     ) {
         return;
     }
@@ -1514,10 +1497,10 @@ async function renderChat(id, conversation = false) {
 function renderMessage(data) {
 
     // Don't render messages if we don't currently have a chat.
-    if (!activeChat) return;
+    if (!state.activeChat) return;
 
     const isMine =
-        user && data.uid === user.uid
+        user && data.uid === state.user.uid
             ? "mine"
             : "notMine";
 
@@ -1540,11 +1523,11 @@ function renderMessage(data) {
     `;
 
     // Cache by CHAT ID, not sidebar DOM element.
-    if (!ss_CHATS.has(activeChat)) {
-        ss_CHATS.set(activeChat, []);
+    if (!state.ss_CHATS.has(state.activeChat)) {
+        state.ss_CHATS.set(state.activeChat, []);
     }
 
-    ss_CHATS.get(activeChat).push(data);
+    state.ss_CHATS.get(state.activeChat).push(data);
 
     mainContentArea.insertAdjacentHTML(
         "beforeend",
@@ -1554,9 +1537,9 @@ function renderMessage(data) {
 
 async function handleChatMesage() {
 
-    if (!activeChat) return;
+    if (!state.activeChat) return;
 
-    const chatId = activeChat;
+    const chatId = state.activeChat;
 
     const markdownContent =
         messageInput.getMarkdown();
@@ -1590,15 +1573,15 @@ async function handleChatMesage() {
 
         const sendData = {
             content: messageTxt,
-            username: user.name,
-            uid: user.uid,
+            username: state.user.name,
+            uid: state.user.uid,
             timestamp: Date.now()
         };
 
         // Clear input only after moderation succeeds.
         messageInput.commands.clearContent();
 
-if (activeChat !== chatId) {
+if (state.activeChat !== chatId) {
     console.warn(
         "Chat changed while sending message. " +
         "Not rendering optimistic message."
@@ -1608,7 +1591,7 @@ if (activeChat !== chatId) {
 }
 
 const dir =
-    activeFeature === "conversation"
+    state.activeFeature === "conversation"
         ? "conversations"
         : "features";
 
@@ -1668,7 +1651,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
                 await checkUserManifest();
 
-                docs = userManifest.filter(entry => {
+                docs = state.userManifest.filter(entry => {
                     const realName = String(entry["Real Name"] || "").toLowerCase();
                     return realName.includes(searchTerm);
                 });
@@ -2077,7 +2060,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
                             FirebaseUtils.ALog(
                                 "Change Permissions",
                                 {
-                                    officer: user.uid,
+                                    officer: user.user.uid,
                                     updated_user: userUID,
                                     data: JSON.stringify(update),
                                     time: new Date().toLocaleString()
@@ -2247,14 +2230,14 @@ async function waitForServer() {
 }
 
 async function fetchServer(endpoint, postData) {
-    if (!firebaseUser) {
+    if (!state.firebaseUser) {
         throw new Error("A signed-in Firebase user is required for backend requests.");
     }
 
     const link = `${backendUrl}/${endpoint}`;
 
     async function makeRequest(forceRefresh = false) {
-        const token = await firebaseUser.getIdToken(forceRefresh);
+        const token = await state.firebaseUser.getIdToken(forceRefresh);
         const headers = {
             Authorization: `Bearer ${token}`
         };
