@@ -12,6 +12,8 @@ export const state = {
     activeFeatureType = null,
     userManifest = null,
   //  guestManifest = null,
-    activeCampaignAdminId = null
+    activeCampaignAdminId = null,
+    conversationListeners = new Map(),
+    chatRenderGeneration = 0
 };
 
