@@ -1,4 +1,2 @@
-export const dom = {
-    mainContentArea: document.getElementById("mainContentArea"),
-    sidebar: document.getElementById("sidebar")
-}
+export const mainContentArea= document.getElementById("mainContentArea")
+export const sidebar = document.getElementById("sidebar")
