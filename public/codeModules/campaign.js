@@ -1,5 +1,5 @@
 import {checkUserManifest} from "./userManifest.js"
-
+import {sidebar} from "./dom.js"
 document.getElementById("campaignAdmin-close").addEventListener("click", () => {
     document.getElementById("campaignAdminUI").hidden = true;
 });

@@ -1,6 +1,6 @@
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
-import {mainContentArea} from "./dom.js"
+import {mainContentArea, sidebar} from "./dom.js"
 
 
 function hideFeatureHTML() {
