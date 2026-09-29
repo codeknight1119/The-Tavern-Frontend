@@ -5,6 +5,8 @@ import { Markdown } from 'https://esm.sh/@tiptap/markdown';
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
 import {fetchServer} from "./backend.js"
+import {mainContentArea} from "./dom.js"
+
 
 function setChatSendLocked(chatId, locked) {
     // Only modify the currently displayed chat.

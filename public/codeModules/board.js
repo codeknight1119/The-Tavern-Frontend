@@ -1,5 +1,6 @@
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
+import {mainContentArea} from "./dom.js"
 
 async function newBoard(title, body, id = null) {
     const fragment = document.getElementById("board-template").content.cloneNode(true);
