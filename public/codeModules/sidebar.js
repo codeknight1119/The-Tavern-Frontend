@@ -1,7 +1,9 @@
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
-import {mainContentArea, sidebar} from "./dom.js"
-
+import {mainContentArea, sidebar, chatUI, setMainContentArea} from "./dom.js"
+import {renderMessage, marked} from "./chat.js"
+import {setupCampaignAdmin} from "./campaign.js"
+import {newBoard} from "./board.js"
 
 function hideFeatureHTML() {
     Array.from(document.getElementsByClassName("featureHTML")).forEach((val) => { val.hidden = true })
@@ -37,7 +39,7 @@ async function loadSidebar(data) {
 
     state.activeFeatureType = data.type;
 
-    mainContentArea = document.getElementById("mainContentArea");
+    setMainContentArea(document.getElementById("mainContentArea"));
     mainContentArea.innerHTML = "";
 
     switch (data.type) {
@@ -54,7 +56,7 @@ async function loadSidebar(data) {
 case "campaign":
     campaignUI.hidden = false;
     mainContentArea.appendChild(campaignUI);
-    mainContentArea = campaignUI;
+     setMainContentArea(campaignUI);
 
     state.activeFeature = data.id;
 
@@ -271,7 +273,7 @@ export function newFeatureButton(val) {
     return fragment;
 }
 
-async function renderChat(id, conversation = false) {
+export async function renderChat(id, conversation = false) {
 
     const renderId = ++ state.chatRenderGeneration;
 

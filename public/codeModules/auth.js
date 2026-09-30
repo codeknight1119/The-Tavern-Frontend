@@ -1,4 +1,4 @@
-import {state} from "./codeModules/state.js"
+import {state} from "./state.js"
 import { FirebaseUtils } from "../firebaseUtils.js";
 export async function checkUser() {
     const userCheck = await FirebaseUtils.isSignedIn()

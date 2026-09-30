@@ -1,4 +1,4 @@
-import {newFeatureButton, renderChat} from "./codeModules/sidebar.js"
+import {newFeatureButton, renderChat} from "./sidebar.js"
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
 import {checkUserManifest, sidebar} from "./campaign.js"

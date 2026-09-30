@@ -205,7 +205,7 @@ async function searchCampaignAdminUsers() {
 
 const campaignUI = document.getElementById("campaignUI")
 
-function setupCampaignAdmin(campaign) {
+export function setupCampaignAdmin(campaign) {
     const adminUI = document.getElementById(
         "campaignAdminUI"
     );

@@ -1,11 +1,13 @@
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+export marked
 import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
 import { Markdown } from 'https://esm.sh/@tiptap/markdown';
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
 import {fetchServer} from "./backend.js"
-import {mainContentArea, sidebar} from "./dom.js"
+import {mainContentArea, sidebar, chatArea} from "./dom.js"
+
 
 
 function setChatSendLocked(chatId, locked) {
@@ -33,8 +35,7 @@ function setChatSendLocked(chatId, locked) {
     }));
 }
 
-const chatUI = document.getElementById("chatTools")
-const chatArea = document.getElementById("sendBar")
+
 
 const messageInput = new Editor({
     element: chatArea,
@@ -54,7 +55,7 @@ const messageInput = new Editor({
     },
 })
 
-function renderMessage(data) {
+export function renderMessage(data) {
     // Don't render messages if we don't currently have a chat.
     if (!state.activeChat) return;
 

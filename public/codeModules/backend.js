@@ -1,4 +1,5 @@
-import {waitForServer} from "./backend.js"
+import {state} from "./state.js"
+
 const backendUrl = "https://the-tavern-backend.onrender.com";
 
 export async function fetchWithTimeout(url, options, timeout = 5000) {

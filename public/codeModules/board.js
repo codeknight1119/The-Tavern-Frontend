@@ -3,7 +3,7 @@ import {state} from "./state.js"
 import {mainContentArea} from "./dom.js"
 
 
-async function newBoard(title, body, id = null) {
+export async function newBoard(title, body, id = null) {
     const fragment = document.getElementById("board-template").content.cloneNode(true);
 
     // 1. Grab a direct reference to the root container element right away

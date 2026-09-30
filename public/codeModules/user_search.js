@@ -1,6 +1,6 @@
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
-import {checkUserManifest} from "./campaign.js"
+import {checkUserManifest} from "./userManifest.js"
 import {fetchServer} from "./backend.js"
 import {mainContentArea} from "./dom.js"
 
