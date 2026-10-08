@@ -271,4 +271,3 @@ function escapeHTML(value) {
 // ============================================================
 
 loadTodayAttendance();
-break

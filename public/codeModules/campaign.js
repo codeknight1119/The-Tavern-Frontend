@@ -203,8 +203,6 @@ async function searchCampaignAdminUsers() {
     });
 }
 
-const campaignUI = document.getElementById("campaignUI")
-
 export function setupCampaignAdmin(campaign) {
     const adminUI = document.getElementById(
         "campaignAdminUI"

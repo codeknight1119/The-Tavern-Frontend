@@ -12,7 +12,9 @@ function getFeatureById(id) {
     return state.myFeatures.find((obj) => obj.id === id)
 }
 
-function listenToConversation(conversationId) {
+const campaignUI = document.getElementById("campaignUI")
+
+export function listenToConversation(conversationId) {
     // Don't create multiple listeners for the same conversation.
     if (state.conversationListeners.has(conversationId)) {
         return;

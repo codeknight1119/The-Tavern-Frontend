@@ -1,5 +1,5 @@
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-export marked
+export {marked} 
 import { Editor } from 'https://esm.sh/@tiptap/core';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
 import { Markdown } from 'https://esm.sh/@tiptap/markdown';
@@ -10,7 +10,7 @@ import {mainContentArea, sidebar, chatArea} from "./dom.js"
 
 
 
-function setChatSendLocked(chatId, locked) {
+export function setChatSendLocked(chatId, locked) {
     // Only modify the currently displayed chat.
     if (chatId !== state.activeChat) return;
 
@@ -60,7 +60,7 @@ export function renderMessage(data) {
     if (!state.activeChat) return;
 
     const isMine =
-        user && data.uid === state.user.uid
+        state.user && data.uid === state.user.uid
             ? "mine"
             : "notMine";
 

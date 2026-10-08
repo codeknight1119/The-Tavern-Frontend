@@ -1,7 +1,7 @@
-import {newFeatureButton, renderChat} from "./sidebar.js"
+import {newFeatureButton, renderChat, listenToConversation} from "./sidebar.js"
 import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
-import {checkUserManifest, sidebar} from "./campaign.js"
+import {checkUserManifest} from "./userManifest.js"
 
 
 document.getElementById("findFriends-searchBtn").addEventListener("click", search);

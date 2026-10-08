@@ -4,6 +4,11 @@ import {checkUserManifest} from "./userManifest.js"
 import {fetchServer} from "./backend.js"
 import {mainContentArea} from "./dom.js"
 
+
+const searchUserDropdown = document.getElementById("filterDropdown")
+const searchTermInput = document.getElementById("searchTermIn")
+let currentSearchUpdates = {}
+
 document.getElementById("userSearchBttn").addEventListener("click", async () => {
 
     try {
@@ -435,7 +440,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
                             FirebaseUtils.ALog(
                                 "Change Permissions",
                                 {
-                                    officer: user.user.uid,
+                                    officer: state.user.uid,
                                     updated_user: userUID,
                                     data: JSON.stringify(update),
                                     time: new Date().toLocaleString()
@@ -495,9 +500,7 @@ document.getElementById("userSearchBttn").addEventListener("click", async () => 
 
 });
 
-const searchUserDropdown = document.getElementById("filterDropdown")
-const searchTermInput = document.getElementById("searchTermIn")
-let currentSearchUpdates = {}
+
 searchUserDropdown.addEventListener("change", (event) => {
     const selectedValue = event.target.value;
     if (selectedValue === "searchName") {

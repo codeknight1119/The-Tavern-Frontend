@@ -1,5 +1,5 @@
 import {state} from "./state.js"
-
+import {setChatSendLocked} from "./chat.js"
 const backendUrl = "https://the-tavern-backend.onrender.com";
 
 export async function fetchWithTimeout(url, options, timeout = 5000) {
