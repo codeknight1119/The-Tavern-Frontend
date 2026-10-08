@@ -11,7 +11,7 @@ import "./codeModules/find_friends.js";
 import "./codeModules/user_search.js";
 import "./codeModules/board.js";
 import "./codeModules/userManifest.js";
+import "./codeModules/roleCall.js";
 
 await checkUser()
 await getMyFeatures()
-
