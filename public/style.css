@@ -70,7 +70,7 @@ main {
     top: 0;
     align-self: start;
     transition: 300ms ease-in-out;
-    overflow: hidden;
+    overflow: scroll;
    /* text-wrap: nowrap;*/
 }
 
