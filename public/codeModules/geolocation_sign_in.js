@@ -36,79 +36,60 @@ function handleStateChange(state) {
 }
 
 function checkSignIn() {
-  const now = new Date();
-  const day = now.getDay();
+    const now = new Date();
+    const day = now.getDay();
 
-  const timeStart = new Date(now);
-  timeStart.setHours(10, 0, 0, 0);
+    const timeStart = new Date(now);
+    timeStart.setHours(10, 0, 0, 0);
 
-  const timeEnd = new Date(now);
-  timeEnd.setHours(12, 30, 0, 0);
+    const timeEnd = new Date(now);
+    timeEnd.setHours(12, 30, 0, 0);
 
-  if (
-    (day === 1 || day === 5) &&
-    now >= timeStart &&
-    now <= timeEnd
-  ) {
-    doSignIn()
-  } else {
-   // alert("Not time to sign in.");
-  }
+    if (
+        (day === 1 || day === 5) &&
+        now >= timeStart &&
+        now <= timeEnd
+    ) {
+        signInPopup.hidden = false;
+        signInBttn.hidden = false;
+        waitSignIn.hidden = true;
+    } else {
+        signInPopup.hidden = true;
+    }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const popup = document.getElementById("geolocation-popup");
-  const allowBtn = document.getElementById("geolocation_allow");
-  const denyBtn = document.getElementById("geolocation_deny");
+const signInPopup = document.getElementById("signIn-popup");
+const signInBttn = document.getElementById("signIn-bttn");
+const waitSignIn = document.getElementById("signIn-wait");
+const cancelSignIn = document.getElementById("signIn-cancel");
 
-  if (allowBtn) {
-    allowBtn.addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        alert("Geolocation is not supported by this browser.");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log("Location obtained:", position.coords);
-
-          if (popup) popup.hidden = true;
-
-          checkSignIn();
-        },
-        (error) => {
-          console.error("Could not obtain location:", error.message);
-        }
-      );
-    });
-  }
-
-  if (denyBtn) {
-    denyBtn.addEventListener("click", () => {
-      if (popup) popup.hidden = true;
-      console.log("User declined the geolocation request.");
-    });
-  }
-
-  checkLocationPermission();
+cancelSignIn.addEventListener("click", () => {
+    signInPopup.hidden = true;
 });
 
-const signInPopup = document.getElementById("signIn-popup")
-const signInBttn = document.getElementById("signIn-bttn")
-const waitSignIn = document.getElementById("signIn-wait")
-const cancelSignIn = document.getElementById("signIn-wait")
-
-cancelSignIn.addEventListener("click", ()=>{
-    document.getElementById("signIn-popup").hidden = true;
-})
-
-signInBttn.addEventListener("click", async ()=>{
+signInBttn.addEventListener("click", async () => {
     waitSignIn.hidden = false;
-    await signInFromSite(); 
-    cancelSignIn.innerText = `Signed in! \nClick to close window.`
-    signInBttn.hidden = true;
-})
+    signInBttn.disabled = true;
 
-function doSignIn(){
-    signInBttn.hidden = false;
-}
+    try {
+        const result = await signInFromSite();
+
+        if (result?.success) {
+            waitSignIn.innerText = "Signed in! Click to close window.";
+            cancelSignIn.innerText = "Close";
+            signInBttn.hidden = true;
+        } else {
+            waitSignIn.innerText =
+                "Sign-in failed. Please try again.";
+            signInBttn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Sign-in failed:", error);
+        waitSignIn.innerText =
+            "Sign-in failed. Please try again.";
+        signInBttn.disabled = false;
+    }
+});
+
+// Run when this module loads.
+checkSignIn();
