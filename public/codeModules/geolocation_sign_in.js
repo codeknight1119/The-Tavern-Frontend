@@ -56,5 +56,7 @@ function checkSignIn(){
     const timeEnd = new Date().setHours(15,30,0,0)
     if((now.currentDay === 1 || now.currentDay === 5) && (now >= timeStart && now <= timeEnd)){
         alert("Sign in?")
+    }else{
+        alert("Not time to sign in.")
     }
 }
