@@ -45,10 +45,9 @@ function getLocalDateKey() {
 }
 
 function getCurrentUserKey() {
-  // Prefer the stable Firebase UID; fall back to the signed-in user's name.
   const user = state.user;
   const identity = state.firebaseUser?.uid ||
-    (user ? `${user.firstName || ""} ${user.lastName || ""}`.trim().toLowerCase() : "");
+    (user ? `${user.realFirstName || user.firstName || ""} ${user.realLastName || user.lastName || ""}`.trim().toLowerCase() : "");
 
   return identity ? `tavern-site-sign-in:${identity}:${getLocalDateKey()}` : null;
 }
@@ -100,8 +99,6 @@ cancelSignIn.addEventListener("click", () => {
 });
 
 signInBttn.addEventListener("click", async () => {
-  // Re-check immediately before sending, so reopening the popup or a double
-  // click cannot create another sign-in for this user on this browser today.
   const storageKey = getCurrentUserKey();
 
   if (!storageKey) {
@@ -129,7 +126,6 @@ signInBttn.addEventListener("click", async () => {
     const result = await signInFromSite();
 
     if (result?.success) {
-      // Save only after the server confirms success, so failed requests can be retried.
       try {
         localStorage.setItem(storageKey, "true");
       } catch (error) {
@@ -140,7 +136,7 @@ signInBttn.addEventListener("click", async () => {
       cancelSignIn.innerText = "Close";
       signInBttn.hidden = true;
     } else {
-      waitSignIn.innerText = "Sign-in failed. Please try again.";
+      waitSignIn.innerText = result?.error || "Sign-in failed. Please try again.";
       signInBttn.disabled = false;
     }
   } catch (error) {
