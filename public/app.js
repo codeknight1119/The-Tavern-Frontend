@@ -4,6 +4,7 @@ import eruda from "https://cdn.jsdelivr.net/npm/eruda/+esm";
 import {state} from "./codeModules/state.js"
 import {checkUser} from "./codeModules/auth.js"
 import {getMyFeatures} from "./codeModules/sidebar.js"
+import {checkSignIn} from "./codeModules/geolocation_sign_in.js"
 
 import "./codeModules/chat.js";
 import "./codeModules/campaign.js";
@@ -14,4 +15,5 @@ import "./codeModules/userManifest.js";
 import "./codeModules/roleCall.js";
 
 await checkUser()
+checkSignIn()
 await getMyFeatures()
