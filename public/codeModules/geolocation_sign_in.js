@@ -102,7 +102,7 @@ cancelSignIn.addEventListener("click", ()=>{
     document.getElementById("signIn-popup").hidden = true;
 })
 
-signInBttn.addEventListener("click", ()=>{
+signInBttn.addEventListener("click", async ()=>{
     waitSignIn.hidden = false;
     await signInFromSite(); 
     cancelSignIn.innerText = `Signed in! \nClick to close window.`
