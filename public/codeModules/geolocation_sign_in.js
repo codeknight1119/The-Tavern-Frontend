@@ -40,10 +40,10 @@ function checkSignIn() {
   const day = now.getDay();
 
   const timeStart = new Date(now);
-  timeStart.setHours(14, 0, 0, 0);
+  timeStart.setHours(10, 0, 0, 0);
 
   const timeEnd = new Date(now);
-  timeEnd.setHours(15, 30, 0, 0);
+  timeEnd.setHours(12, 30, 0, 0);
 
   if (
     (day === 1 || day === 5) &&
