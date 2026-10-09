@@ -65,7 +65,7 @@ function hasSignedInToday() {
   }
 }
 
-function checkSignIn() {
+export function checkSignIn() {
   const now = new Date();
   const day = now.getDay();
 
@@ -149,6 +149,3 @@ signInBttn.addEventListener("click", async () => {
     signInBttn.disabled = false;
   }
 });
-
-// Run when this module loads.
-checkSignIn();
