@@ -1,5 +1,6 @@
 import {mainContentArea} from "./dom.js";
 
+export async function roleCall() {
 const guestTemplate = document.getElementById("guestUITemplate");
 if (!guestTemplate) {
     console.warn("guestUITemplate not found; roleCall module will not render.");
@@ -138,4 +139,5 @@ function escapeHTML(value) {
         .replaceAll("'", "&#039;");
 }
 
-loadTodayAttendance();
+loadTodayAttendance();    
+}

@@ -1,7 +1,10 @@
 import { FirebaseUtils } from "../firebaseUtils.js";
 import { state } from "./state.js";
 import { checkUserManifest } from "./userManifest.js";
-import { renderChat } from "./sidebar.js";
+import { renderChat, newFeatureButton, listenToConversation } from "./sidebar.js";
+import {renderMessage} from "./chat.js"
+
+
 
 const friendFriendsBtn = document.getElementById("findFriends-btn");
 const findFriends_popup = document.getElementById("findFriends-popup");
@@ -143,50 +146,5 @@ async function search() {
         const notFound = document.createElement("p");
         notFound.innerText = `Could not find "${searchTerm}"`;
         if (findFriends_outTemplateParent) findFriends_outTemplateParent.appendChild(notFound);
-    }
-}
-
-export function newFeatureButton(val) {
-    const template = document.getElementById("sidebarTemplate");
-    const fragment = template.content.cloneNode(true);
-    const a = fragment.querySelector(".nav-btn");
-    const text = fragment.querySelector(".sidebarText");
-    const icon = fragment.querySelector(".ra");
-
-    text.innerText = val.name || "Conversation";
-    if (val.icon && val.icon.trim() !== "") {
-        icon.classList.add(val.icon.trim());
-    }
-
-    if (val.tooltip) {
-        a.title = val.tooltip;
-    }
-
-    a.dataset.id = val.id;
-    a.dataset.personalMessage = "true";
-
-    return fragment;
-}
-
-export function listenToConversation(conversationId) {
-    if (!state.conversationListeners) state.conversationListeners = new Map();
-    if (state.conversationListeners.has(conversationId)) return;
-
-    const unsubscribe = FirebaseUtils.listenForNewDocInCollection(
-        `/conversations/${conversationId}/messages`,
-        (data) => {
-            if (conversationId !== state.activeChat) return;
-            if (data.uid === state.user.uid) return;
-            if (typeof renderMessage === "function") renderMessage(data);
-        }
-    );
-
-    state.conversationListeners.set(conversationId, unsubscribe);
-}
-
-export function renderMessage(data) {
-    // no-op placeholder to satisfy imports while chat.js owns the real implementation
-    if (typeof window !== "undefined") {
-        console.debug("renderMessage placeholder called", data);
     }
 }
