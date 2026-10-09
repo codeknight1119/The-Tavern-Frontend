@@ -140,43 +140,58 @@ export async function roleCall() {
             .replaceAll("'", "&#039;");
     }
 
-    loadTodayAttendance();    
+    loadTodayAttendance();
 }
 
 export async function signInFromSite() {
+    // Tavern user documents store the member's legal/real names under these keys.
+    const firstName = state.user?.realFirstName || state.user?.firstName;
+    const lastName = state.user?.realLastName || state.user?.lastName;
+
+    if (!firstName?.trim() || !lastName?.trim()) {
+        return {
+            success: false,
+            error: "Your Tavern profile is missing your first or last name. Please update your profile."
+        };
+    }
+
     const payload = {
-        firstName: state.user.firstName,
-        lastName: state.user.lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         isGuest: false
     };
 
     const date = new Date();
-    payload.date = new Intl.DateTimeFormat('en-CA', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
+    payload.date = new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
     }).format(date);
 
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      // Use text/plain to avoid CORS preflight (OPTIONS) triggers in browsers when calling Google Apps Script
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify(payload)
-    });
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            // Use text/plain to avoid CORS preflight (OPTIONS) triggers in browsers when calling Google Apps Script.
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: JSON.stringify(payload)
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (result.success) {
-      console.log("Sign-in recorded:", result.entry);
-    } else {
-      console.error("Error from script:", result.error);
+        if (result.success) {
+            console.log("Sign-in recorded:", result.entry);
+        } else {
+            console.error("Error from script:", result.error);
+        }
+
+        return result;
+    } catch (error) {
+        console.error("Network request failed:", error);
+        return {
+            success: false,
+            error: "Network request failed. Please try again."
+        };
     }
-
-    return result;
-  } catch (error) {
-    console.error("Network request failed:", error);
-  }
 }
