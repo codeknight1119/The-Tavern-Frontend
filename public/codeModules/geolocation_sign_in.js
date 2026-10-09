@@ -7,56 +7,63 @@ async function checkLocationPermission() {
   }
 
   try {
-    // Query the geolocation permission status
     const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
     console.log(`Geolocation permission state: ${permissionStatus.state}`);
 
-    // Handle the initial state
     handleStateChange(permissionStatus.state);
 
-    // Optional: Listen for live permission changes (e.g., if the user changes settings)
     permissionStatus.onchange = () => {
       console.log(`Permission state changed to: ${permissionStatus.state}`);
       handleStateChange(permissionStatus.state);
     };
-
   } catch (error) {
     console.error("Error checking geolocation permission:", error);
   }
 }
 
 function handleStateChange(state) {
-    currentStatus = state;
-  if (state === 'granted') {
+  currentStatus = state;
+  const popup = document.getElementById("geolocation-popup");
 
+  if (state === 'granted') {
+    if (popup) popup.hidden = true;
+    checkSignIn();
   } else if (state === 'prompt') {
-    const popup = document.getElementById("geolocation-popup")
-    popup.querySelector(".geolocation_allow").addEventListener("click", ()=>{
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                popup.hidden = true
-            },
-            (error) => {
-                //Geolocation blocked or ignored
-                popup.hidden = true;
-            }
-        ) ;
-    })
-    popup.hidden = false;
+    if (popup) popup.hidden = false;
   } else if (state === 'denied') {
-    checkSignIn()
+    if (popup) popup.hidden = true;
+    checkSignIn();
   }
 }
 
-checkLocationPermission();
+function checkSignIn() {
+  const now = new Date();
+  const day = now.getDay(); // 1 = Monday, 5 = Friday
+  const timeStart = new Date().setHours(14, 0, 0, 0);
+  const timeEnd = new Date().setHours(15, 30, 0, 0);
 
-function checkSignIn(){
-    const now = new Date()
-    const timeStart = new Date().setHours(14,0,0,0);
-    const timeEnd = new Date().setHours(15,30,0,0)
-    if((now.currentDay === 1 || now.currentDay === 5) && (now >= timeStart && now <= timeEnd)){
-        alert("Sign in?")
-    }else{
-        alert("Not time to sign in.")
-    }
+  if ((day === 1 || day === 5) && (now >= timeStart && now <= timeEnd)) {
+    alert("Sign in?");
+  } else {
+    alert("Not time to sign in.");
+  }
 }
+
+// Attach the button listener once on load
+document.addEventListener("DOMContentLoaded", () => {
+  const allowBtn = document.querySelector("#geolocation-popup .geolocation_allow");
+  if (allowBtn) {
+    allowBtn.addEventListener("click", () => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Native browser permission granted; permissionStatus.onchange triggers automatically
+        },
+        (error) => {
+          // Permission denied or dismissed
+        }
+      );
+    });
+  }
+});
+
+checkLocationPermission();
