@@ -12,6 +12,7 @@ import "./codeModules/user_search.js";
 import "./codeModules/board.js";
 import "./codeModules/userManifest.js";
 import "./codeModules/roleCall.js";
+import "./codeModules/geolocation_sign_in.js"
 
 await checkUser()
 await getMyFeatures()
