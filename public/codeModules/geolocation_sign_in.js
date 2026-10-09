@@ -1,19 +1,20 @@
+
 let currentStatus = null;
 
 async function checkLocationPermission() {
   if (!navigator.permissions) {
-    console.log("Permissions API is not supported in this browser.");
+    console.log("Permissions API is not supported.");
     return;
   }
 
   try {
-    const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-    console.log(`Geolocation permission state: ${permissionStatus.state}`);
+    const permissionStatus = await navigator.permissions.query({
+      name: "geolocation"
+    });
 
     handleStateChange(permissionStatus.state);
 
     permissionStatus.onchange = () => {
-      console.log(`Permission state changed to: ${permissionStatus.state}`);
       handleStateChange(permissionStatus.state);
     };
   } catch (error) {
@@ -23,47 +24,70 @@ async function checkLocationPermission() {
 
 function handleStateChange(state) {
   currentStatus = state;
+
   const popup = document.getElementById("geolocation-popup");
 
-  if (state === 'granted') {
-    if (popup) popup.hidden = true;
-    checkSignIn();
-  } else if (state === 'prompt') {
+  if (state === "prompt") {
     if (popup) popup.hidden = false;
-  } else if (state === 'denied') {
+  } else {
     if (popup) popup.hidden = true;
-    checkSignIn();
   }
 }
 
 function checkSignIn() {
   const now = new Date();
-  const day = now.getDay(); // 1 = Monday, 5 = Friday
-  const timeStart = new Date().setHours(14, 0, 0, 0);
-  const timeEnd = new Date().setHours(15, 30, 0, 0);
+  const day = now.getDay();
 
-  if ((day === 1 || day === 5) && (now >= timeStart && now <= timeEnd)) {
+  const timeStart = new Date(now);
+  timeStart.setHours(14, 0, 0, 0);
+
+  const timeEnd = new Date(now);
+  timeEnd.setHours(15, 30, 0, 0);
+
+  if (
+    (day === 1 || day === 5) &&
+    now >= timeStart &&
+    now <= timeEnd
+  ) {
     alert("Sign in?");
   } else {
     alert("Not time to sign in.");
   }
 }
 
-// Attach the button listener once on load
 document.addEventListener("DOMContentLoaded", () => {
-  const allowBtn = document.querySelector("#geolocation-popup .geolocation_allow");
+  const popup = document.getElementById("geolocation-popup");
+  const allowBtn = document.getElementById("geolocation_allow");
+  const denyBtn = document.getElementById("geolocation_deny");
+
   if (allowBtn) {
     allowBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by this browser.");
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // Native browser permission granted; permissionStatus.onchange triggers automatically
+          console.log("Location obtained:", position.coords);
+
+          if (popup) popup.hidden = true;
+
+          checkSignIn();
         },
         (error) => {
-          // Permission denied or dismissed
+          console.error("Could not obtain location:", error.message);
         }
       );
     });
   }
-});
 
-checkLocationPermission();
+  if (denyBtn) {
+    denyBtn.addEventListener("click", () => {
+      if (popup) popup.hidden = true;
+      console.log("User declined the geolocation request.");
+    });
+  }
+
+  checkLocationPermission();
+});
