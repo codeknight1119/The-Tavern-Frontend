@@ -1,3 +1,4 @@
+import {signInFromSite} from "./roleCall.js"
 
 let currentStatus = null;
 
@@ -49,9 +50,9 @@ function checkSignIn() {
     now >= timeStart &&
     now <= timeEnd
   ) {
-    alert("Sign in?");
+    doSignIn()
   } else {
-    alert("Not time to sign in.");
+   // alert("Not time to sign in.");
   }
 }
 
@@ -91,3 +92,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   checkLocationPermission();
 });
+
+const signInPopup = document.getElementById("signIn-popup")
+const signInBttn = document.getElementById("signIn-bttn")
+const waitSignIn = document.getElementById("signIn-wait")
+const cancelSignIn = document.getElementById("signIn-wait")
+
+cancelSignIn.addEventListener("click", ()=>{
+    document.getElementById("signIn-popup").hidden = true;
+})
+
+signInBttn.addEventListener("click", ()=>{
+    waitSignIn.hidden = false;
+    await signInFromSite(); 
+    cancelSignIn.innerText = `Signed in! \nClick to close window.`
+    signInBttn.hidden = true;
+})
+
+function doSignIn(){
+    signInBttn.hidden = false;
+}
