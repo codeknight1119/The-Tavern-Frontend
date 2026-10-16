@@ -1,28 +1,6 @@
 import {signInFromSite} from "./roleCall.js";
 import {state} from "./state.js";
 
-async function checkLocationPermission() {
-  if (!navigator.permissions) {
-    console.log("Permissions API is not supported.");
-    return;
-  }
-
-  try {
-    const permissionStatus = await navigator.permissions.query({
-      name: "geolocation"
-    });
-
-    handleStateChange(permissionStatus.state);
-    permissionStatus.onchange = () => handleStateChange(permissionStatus.state);
-  } catch (error) {
-    console.error("Error checking geolocation permission:", error);
-  }
-}
-
-function handleStateChange(permissionState) {
-  const popup = document.getElementById("geolocation-popup");
-  if (popup) popup.hidden = permissionState !== "prompt";
-}
 
 function getLocalDateKey() {
   const now = new Date();
@@ -55,10 +33,9 @@ export function checkSignIn() {
   const now = new Date();
   const day = now.getDay();
   const timeStart = new Date(now);
-  timeStart.setHours(10, 0, 0, 0);
+  timeStart.setHours(2, 0, 0, 0);
   const timeEnd = new Date(now);
-  timeEnd.setHours(12, 30, 0, 0);
-
+  timeEnd.setHours(3, 30, 0, 0);
   if (
     (day === 1 || day === 5) &&
     now >= timeStart &&
@@ -129,37 +106,4 @@ signInBttn.addEventListener("click", async () => {
     waitSignIn.innerText = "Sign-in failed. Please try again.";
     signInBttn.disabled = false;
   }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const popup = document.getElementById("geolocation-popup");
-  const allowBtn = document.getElementById("geolocation_allow");
-  const denyBtn = document.getElementById("geolocation_deny");
-
-  if (allowBtn) {
-    allowBtn.addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        alert("Geolocation is not supported by this browser.");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log("Location obtained:", position.coords);
-          if (popup) popup.hidden = true;
-          checkSignIn();
-        },
-        (error) => console.error("Could not obtain location:", error.message)
-      );
-    });
-  }
-
-  if (denyBtn) {
-    denyBtn.addEventListener("click", () => {
-      if (popup) popup.hidden = true;
-      console.log("User declined the geolocation request.");
-    });
-  }
-
-  checkLocationPermission();
 });
