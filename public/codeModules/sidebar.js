@@ -4,6 +4,7 @@ import {mainContentArea, sidebar, chatUI, setMainContentArea} from "./dom.js"
 import {renderMessage, marked} from "./chat.js"
 import {setupCampaignAdmin} from "./campaign.js"
 import {newBoard} from "./board.js"
+import { roleCall } from "./roleCall.js";
 
 function hideFeatureHTML() {
     Array.from(document.getElementsByClassName("featureHTML")).forEach((val) => { val.hidden = true })
@@ -444,7 +445,8 @@ export async function renderTool(id) {
             break
 
         case "roleCall":
-           break 
+            await roleCall();
+            break
         }
 }
 
