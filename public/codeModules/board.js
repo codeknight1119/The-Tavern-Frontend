@@ -22,7 +22,7 @@ export async function newBoard(title, body, formLink, id = null) {
     const iframe = fragment.querySelector(".form-iframe")
 
     titleText.contentEditable = bodyText.contentEditable = isOfficer;
-    delofficerToolsBtn.hidden = !isOfficer;
+    officerTools.hidden = !isOfficer;
 
     let finalId = id;
 
