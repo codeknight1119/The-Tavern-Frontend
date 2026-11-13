@@ -916,3 +916,24 @@ dropdown-btn i {
     padding: 0 16px 16px 16px;
 }
 
+
+.board-title {
+    width: 100%;
+    box-sizing: border-box;
+
+    /* Override the generic title spacing */
+    padding: 0.1em 0.25em;
+    margin: 0;
+
+    /* Keep multiple lines readable */
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: break-word;
+
+    /* Keep the title centered */
+    text-align: center;
+
+    /* Make the editable area behave like a block */
+    display: block;
+    min-height: 0;
+}
