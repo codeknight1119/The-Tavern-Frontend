@@ -2,8 +2,10 @@ import { FirebaseUtils } from "../firebaseUtils.js";
 import {state} from "./state.js"
 import {mainContentArea} from "./dom.js"
 
-
-export async function newBoard(title, body, id = null) {
+/*
+Used in sidebar.js where boards are constructed 
+*/
+export async function newBoard(title, body, formLink, id = null) {
     const fragment = document.getElementById("board-template").content.cloneNode(true);
 
     // 1. Grab a direct reference to the root container element right away
@@ -11,11 +13,16 @@ export async function newBoard(title, body, id = null) {
 
     const titleText = fragment.querySelector(".board-title");
     const bodyText = fragment.querySelector(".board-body");
-    const delBtn = fragment.querySelector(".board-delete");
+    const officerTools = fragment.querySelector(".officer-tools");
     const isOfficer = state.permissions.includes("officer");
 
+    const delBtn = fragment.querySelector(".board-delete")
+    const formLinkIn = fragment.querySelector(".form-link-in")
+
+    const iframe = fragment.querySelector(".form-iframe")
+
     titleText.contentEditable = bodyText.contentEditable = isOfficer;
-    delBtn.hidden = !isOfficer;
+    delofficerToolsBtn.hidden = !isOfficer;
 
     let finalId = id;
 
@@ -23,7 +30,8 @@ export async function newBoard(title, body, id = null) {
     if (!finalId) {
         const newDocData = await FirebaseUtils.addDocument(`/features/${state.activeFeature}/boards`, {
             title: title || "Title",
-            body: body || "Type announcement"
+            body: body || "Type announcement",
+            link: ""
         });
         finalId = newDocData.id;
 
@@ -46,6 +54,15 @@ export async function newBoard(title, body, id = null) {
             await FirebaseUtils.updateDocument(path, payload);
         });
 
+        formLinkIn.addEventListener("blur", async (event) => {
+            const payload = { formLink: event.target.innerText };
+            await FirebaseUtils.updateDocument(path, payload);
+                if(formLink && formLink.trim() !== ""){
+                iframe.hidden = false
+                iframe.src = formLink
+            }
+        });
+
         delBtn.addEventListener("click", async () => {
             await FirebaseUtils.deleteDocument(path);
             // 3. Use the direct reference we saved earlier to delete it from the UI
@@ -55,6 +72,11 @@ export async function newBoard(title, body, id = null) {
 
     titleText.innerText = title || "Title";
     bodyText.innerHTML = body || "Type announcement";
+    
+    if(formLink && formLink.trim() !== ""){
+        iframe.hidden = false
+        iframe.src = formLink
+    }
 
     // Prepend the finished fragment to your page
     mainContentArea.prepend(fragment);

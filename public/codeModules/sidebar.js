@@ -379,6 +379,7 @@ export async function renderTool(id) {
             boards.forEach((board) => {
                 console.log(board)
                 const parsedBody = marked.parse(board.body)
+                const boardLink = board.formLink
                 newBoard(board.title, parsedBody, board.id)
             })
             break
