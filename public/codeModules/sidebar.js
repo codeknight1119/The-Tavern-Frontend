@@ -380,7 +380,7 @@ export async function renderTool(id) {
                 console.log(board)
                 const parsedBody = marked.parse(board.body)
                 const boardLink = board.formLink
-                newBoard(board.title, parsedBody, board.id)
+                newBoard(board.title, parsedBody,boardLink, board.id)
             })
             break
 

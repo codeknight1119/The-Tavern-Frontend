@@ -24,6 +24,7 @@ export async function newBoard(title, body, formLink, id = null) {
     titleText.contentEditable = bodyText.contentEditable = isOfficer;
     officerTools.hidden = !isOfficer;
 
+
     let finalId = id;
 
     // 2. ONLY add a new document to Firebase if we didn't pass an existing ID
@@ -43,6 +44,16 @@ export async function newBoard(title, body, formLink, id = null) {
     console.log(finalId);
     const path = `/features/${state.activeFeature}/boards/${finalId}`;
 
+
+    const updateIframe = ()=>{
+        iframe.hidden = true;
+        iframe.removeAttribute("src");
+        if(formLink && formLink.trim() !== ""){
+            iframe.hidden = false
+            iframe.src = formLink
+        }
+    }
+
     if (isOfficer) {
         titleText.addEventListener("blur", async (event) => {
             const payload = { title: event.target.innerText };
@@ -54,13 +65,16 @@ export async function newBoard(title, body, formLink, id = null) {
             await FirebaseUtils.updateDocument(path, payload);
         });
 
+        formLinkIn.value = formLink || "";
+
         formLinkIn.addEventListener("blur", async (event) => {
-            const payload = { formLink: event.target.innerText };
-            await FirebaseUtils.updateDocument(path, payload);
-                if(formLink && formLink.trim() !== ""){
-                iframe.hidden = false
-                iframe.src = formLink
-            }
+            const link = event.target.value.trim();
+
+            await FirebaseUtils.updateDocument(path, {
+                formLink: link
+            });
+
+            updateIframe()
         });
 
         delBtn.addEventListener("click", async () => {
@@ -72,11 +86,7 @@ export async function newBoard(title, body, formLink, id = null) {
 
     titleText.innerText = title || "Title";
     bodyText.innerHTML = body || "Type announcement";
-    
-    if(formLink && formLink.trim() !== ""){
-        iframe.hidden = false
-        iframe.src = formLink
-    }
+    updateIframe()
 
     // Prepend the finished fragment to your page
     mainContentArea.prepend(fragment);
