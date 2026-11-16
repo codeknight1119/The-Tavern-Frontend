@@ -937,3 +937,9 @@ dropdown-btn i {
     display: block;
     min-height: 0;
 }
+
+.inline {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: nowrap;
+}

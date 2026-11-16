@@ -5,6 +5,8 @@ import {renderMessage, marked} from "./chat.js"
 import {setupCampaignAdmin} from "./campaign.js"
 import {newBoard} from "./board.js"
 import { roleCall } from "./roleCall.js";
+import {getNextThursday} from "./meetingSchedule.js"
+
 
 function hideFeatureHTML() {
     Array.from(document.getElementsByClassName("featureHTML")).forEach((val) => { val.hidden = true })
@@ -447,6 +449,12 @@ export async function renderTool(id) {
 
         case "roleCall":
             await roleCall();
+            break
+
+        case "meetingSchedule":
+            const MS_UI = document.getElementById("meetingScheduleUI").content.cloneNode(true)
+            const nextDate = getNextThursday().toDateString()
+            MS_UI.querySelector(".nextMeetingDate").innerText = nextDate
             break
         }
 }
