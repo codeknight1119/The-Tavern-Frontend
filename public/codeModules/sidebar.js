@@ -5,7 +5,7 @@ import {renderMessage, marked} from "./chat.js"
 import {setupCampaignAdmin} from "./campaign.js"
 import {newBoard} from "./board.js"
 import { roleCall } from "./roleCall.js";
-import {getNextThursday} from "./meetingSchedule.js"
+import {getNextMeetingDate} from "./meetingSchedule.js"
 
 
 function hideFeatureHTML() {
@@ -453,7 +453,7 @@ export async function renderTool(id) {
 
         case "meetingSchedule":
             const MS_UI = document.getElementById("meetingScheduleUI").content.cloneNode(true)
-            const nextDate = getNextThursday().toDateString()
+            const nextDate = getNextMeetingDate().toDateString()
             MS_UI.querySelector(".nextMeetingDate").innerText = nextDate
             break
         }
