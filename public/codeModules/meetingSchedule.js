@@ -9,11 +9,14 @@ export function getNextMeetingDate() {
     let daysTil = 7;
 
     meetingDays.forEach((val)=>{
-        const daysTil = (targetDay + 7 - currentDay) % 7 || 7;
+        const daysTil = (val + 7 - currentDay) % 7 || 7;
 
         if(daysTil < currentTilDate){
-            resultDate.setDate(today.getDate() + daysUntilThursday)
+            currentTilDate = daysTil
+            
         }
     })
+
+    resultDate.setDate(today.getDate() + daysTil)
     return resultDate;
 }
