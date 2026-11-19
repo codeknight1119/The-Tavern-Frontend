@@ -14,8 +14,7 @@ export function getNextMeetingDate() {
         const daysTil = (val + 7 - currentDay) % 7 || 7;
 
         if(daysTil < currentTilDate){
-            currentTilDate = daysTil
-            
+            currentTilDate = daysTil;
         }
     })
 

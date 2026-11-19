@@ -455,6 +455,7 @@ export async function renderTool(id) {
             const MS_UI = document.getElementById("meetingScheduleUI").content.cloneNode(true)
             const nextDate = getNextMeetingDate().toDateString()
             MS_UI.querySelector(".nextMeetingDate").innerText = nextDate
+            MS_UI.hidden = false;
             break
         }
 }
