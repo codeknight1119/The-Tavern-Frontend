@@ -6,6 +6,8 @@ export function getNextMeetingDate() {
     const meetingDays = [1,5]
     const currentDay = today.getDay();
 
+
+   let  currentTilDate = 7
     let daysTil = 7;
 
     meetingDays.forEach((val)=>{
